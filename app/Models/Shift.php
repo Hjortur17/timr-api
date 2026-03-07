@@ -4,37 +4,29 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class Shift extends Model
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, HasRoles, Notifiable;
+    use HasFactory;
 
     protected $fillable = [
         'company_id',
-        'name',
-        'email',
-        'password',
-        'is_active',
-    ];
-
-    protected $hidden = [
-        'password',
-        'remember_token',
+        'employee_id',
+        'title',
+        'start_time',
+        'end_time',
+        'notes',
+        'status',
     ];
 
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'is_active' => 'boolean',
+            'start_time' => 'datetime',
+            'end_time' => 'datetime',
         ];
     }
 
@@ -52,9 +44,9 @@ class User extends Authenticatable
         return $this->belongsTo(Company::class);
     }
 
-    public function shifts(): HasMany
+    public function employee(): BelongsTo
     {
-        return $this->hasMany(Shift::class, 'employee_id');
+        return $this->belongsTo(User::class, 'employee_id');
     }
 
     public function clockEntries(): HasMany

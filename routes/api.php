@@ -1,0 +1,37 @@
+<?php
+
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Employee\ClockController;
+use App\Http\Controllers\Employee\ShiftController as EmployeeShiftController;
+use App\Http\Controllers\Manager\EmployeeController;
+use App\Http\Controllers\Manager\LocationController;
+use App\Http\Controllers\Manager\ShiftController as ManagerShiftController;
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('auth')->group(function () {
+    Route::post('register', RegisterController::class);
+    Route::post('login', [LoginController::class, 'login']);
+    Route::post('logout', [LoginController::class, 'logout'])->middleware('auth:sanctum');
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::prefix('manager')->middleware('role:manager')->group(function () {
+        Route::get('employees', [EmployeeController::class, 'index']);
+        Route::post('employees', [EmployeeController::class, 'store']);
+
+        Route::get('shifts', [ManagerShiftController::class, 'index']);
+        Route::post('shifts', [ManagerShiftController::class, 'store']);
+        Route::put('shifts/{shift}', [ManagerShiftController::class, 'update']);
+        Route::delete('shifts/{shift}', [ManagerShiftController::class, 'destroy']);
+
+        Route::get('locations', [LocationController::class, 'index']);
+        Route::post('locations', [LocationController::class, 'store']);
+    });
+
+    Route::prefix('employee')->middleware('role:employee')->group(function () {
+        Route::get('shifts', [EmployeeShiftController::class, 'index']);
+        Route::post('clock-in', [ClockController::class, 'clockIn']);
+        Route::post('clock-out', [ClockController::class, 'clockOut']);
+    });
+});

@@ -1,0 +1,325 @@
+# Timr – Laravel API Backend
+
+## Project Overview
+Multi-tenant SaaS REST API for shift scheduling and time tracking.
+Managers create and assign shifts, employees view their shifts and clock in/out.
+
+## Tech Stack
+- Laravel 12
+- PHP 8.5+
+- MySQL
+- Redis (queues)
+- Laravel Sanctum (authentication)
+- Spatie Laravel Permission (roles)
+
+
+---
+
+## Database Schema
+
+### companies
+```
+id, name, slug, created_at, updated_at
+```
+
+### users
+```
+id, company_id (FK), name, email, password,
+is_active (bool), created_at, updated_at
+```
+
+### shifts
+```
+id, company_id (FK), employee_id (FK users),
+title, start_time, end_time, notes,
+status (draft/published/cancelled),
+created_at, updated_at
+```
+
+### locations
+```
+id, company_id (FK), name, address,
+latitude, longitude, geo_fence_radius (int, meters),
+created_at, updated_at
+```
+
+### clock_entries
+```
+id, shift_id (FK), user_id (FK),
+clocked_in_at, clocked_out_at,
+clock_in_lat, clock_in_lng,
+created_at, updated_at
+```
+
+---
+
+## Folder Structure
+```
+app/
+├── Http/
+│   ├── Controllers/
+│   │   ├── Auth/
+│   │   │   ├── LoginController.php
+│   │   │   └── RegisterController.php
+│   │   ├── Manager/
+│   │   │   ├── ShiftController.php
+│   │   │   ├── EmployeeController.php
+│   │   │   └── LocationController.php
+│   │   └── Employee/
+│   │       ├── ShiftController.php
+│   │       └── ClockController.php
+│   └── Requests/
+│       ├── Shift/
+│       │   ├── StoreShiftRequest.php
+│       │   └── UpdateShiftRequest.php
+│       └── Clock/
+│           └── ClockInRequest.php
+├── Models/
+│   ├── Company.php
+│   ├── User.php
+│   ├── Shift.php
+│   ├── Location.php
+│   └── ClockEntry.php
+├── Policies/
+│   ├── ShiftPolicy.php
+│   └── ClockEntryPolicy.php
+└── Services/
+    ├── ShiftService.php
+    ├── ClockService.php
+    └── GeoFenceService.php
+```
+
+---
+
+## API Routes
+```
+POST   /api/auth/register
+POST   /api/auth/login
+POST   /api/auth/logout
+
+# Manager (role: manager)
+GET    /api/manager/employees
+POST   /api/manager/employees
+GET    /api/manager/shifts
+POST   /api/manager/shifts
+PUT    /api/manager/shifts/{shift}
+DELETE /api/manager/shifts/{shift}
+GET    /api/manager/locations
+POST   /api/manager/locations
+
+# Employee (role: employee)
+GET    /api/employee/shifts
+POST   /api/employee/clock-in
+POST   /api/employee/clock-out
+```
+
+---
+
+## Coding Conventions
+
+### Multi-Tenancy
+Every model (except Company) must have a Global Scope filtering by company_id.
+Always verify company_id in Policies to prevent data leaking between tenants.
+
+```php
+protected static function booted(): void
+{
+    static::addGlobalScope('company', function (Builder $builder) {
+        if (auth()->check()) {
+            $builder->where('company_id', auth()->user()->company_id);
+        }
+    });
+}
+```
+
+### Controllers
+- Thin controllers, business logic lives in Services
+- Always use Form Requests for validation
+- Always use API Resources for responses
+
+### Consistent JSON response format
+```json
+{ "data": {}, "message": "Success" }
+{ "message": "Error description", "errors": {} }
+```
+
+### Policies
+Always use Policies, never inline authorization in controllers.
+Always check company_id ownership on every resource.
+
+```php
+public function update(User $user, Shift $shift): bool
+{
+    return $user->company_id === $shift->company_id
+        && $user->hasRole('manager');
+}
+```
+
+### Services
+- One responsibility per service
+- Inject dependencies via constructor
+
+---
+
+## Roles (Spatie Permission)
+```
+manager  → create/edit/delete shifts, manage employees, view locations
+employee → view own shifts, clock in, clock out
+```
+
+---
+
+## GeoFence
+Use Haversine formula to calculate distance between employee GPS and location.
+Throw a ValidationException if employee is outside the allowed radius.
+
+```php
+public function isWithinRange(float $lat, float $lng, Location $location): bool
+{
+    $distance = $this->haversineDistance($lat, $lng, $location->latitude, $location->longitude);
+    return $distance <= $location->geo_fence_radius;
+}
+```
+
+---
+
+## Testing with Pest
+
+### Conventions
+- All tests written in Pest (never PHPUnit syntax)
+- Use RefreshDatabase on every test file
+- Use factories for all test data
+- Group tests by feature in /tests/Feature/
+- Descriptive test names in plain English
+
+### Structure
+```
+tests/
+└── Feature/
+    ├── Auth/
+    │   ├── LoginTest.php
+    │   └── RegisterTest.php
+    ├── Manager/
+    │   ├── ShiftTest.php
+    │   ├── EmployeeTest.php
+    │   └── LocationTest.php
+    └── Employee/
+        ├── ShiftTest.php
+        └── ClockTest.php
+```
+
+### Example Tests
+
+```php
+// tests/Feature/Manager/ShiftTest.php
+uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    $this->company = Company::factory()->create();
+    $this->manager = User::factory()->for($this->company)->create();
+    $this->manager->assignRole('manager');
+    $this->actingAs($this->manager);
+});
+
+it('allows a manager to create a shift', function () {
+    $employee = User::factory()->for($this->company)->create();
+    $employee->assignRole('employee');
+
+    $response = $this->postJson('/api/manager/shifts', [
+        'employee_id' => $employee->id,
+        'title'       => 'Morning Shift',
+        'start_time'  => '2025-06-01 08:00:00',
+        'end_time'    => '2025-06-01 16:00:00',
+        'status'      => 'published',
+    ]);
+
+    $response->assertCreated()
+        ->assertJsonPath('data.title', 'Morning Shift');
+
+    expect(Shift::count())->toBe(1);
+});
+
+it('prevents a manager from seeing another companys shifts', function () {
+    $otherCompany = Company::factory()->create();
+    $otherShift = Shift::factory()->for($otherCompany)->create();
+
+    $this->getJson("/api/manager/shifts/{$otherShift->id}")
+        ->assertForbidden();
+});
+
+it('prevents an employee from creating a shift', function () {
+    $employee = User::factory()->for($this->company)->create();
+    $employee->assignRole('employee');
+    $this->actingAs($employee);
+
+    $this->postJson('/api/manager/shifts', [])->assertForbidden();
+});
+```
+
+```php
+// tests/Feature/Employee/ClockTest.php
+uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    $this->company = Company::factory()->create();
+    $this->employee = User::factory()->for($this->company)->create();
+    $this->employee->assignRole('employee');
+    $this->actingAs($this->employee);
+    $this->location = Location::factory()->for($this->company)->create([
+        'latitude'         => 64.1355,
+        'longitude'        => -21.8954,
+        'geo_fence_radius' => 200,
+    ]);
+});
+
+it('allows an employee to clock in within geo fence', function () {
+    $shift = Shift::factory()->for($this->company)->for($this->employee, 'employee')->create();
+
+    $this->postJson('/api/employee/clock-in', [
+        'shift_id'  => $shift->id,
+        'latitude'  => 64.1356,  // within 200m
+        'longitude' => -21.8955,
+    ])->assertCreated();
+
+    expect(ClockEntry::count())->toBe(1);
+});
+
+it('rejects clock in when employee is outside geo fence', function () {
+    $shift = Shift::factory()->for($this->company)->for($this->employee, 'employee')->create();
+
+    $this->postJson('/api/employee/clock-in', [
+        'shift_id'  => $shift->id,
+        'latitude'  => 65.6835,  // far away (Akureyri)
+        'longitude' => -18.1002,
+    ])->assertUnprocessable();
+});
+
+it('prevents clocking in to another employees shift', function () {
+    $otherEmployee = User::factory()->for($this->company)->create();
+    $shift = Shift::factory()
+        ->for($this->company)
+        ->for($otherEmployee, 'employee')
+        ->create();
+
+    $this->postJson('/api/employee/clock-in', [
+        'shift_id'  => $shift->id,
+        'latitude'  => 64.1356,
+        'longitude' => -21.8955,
+    ])->assertForbidden();
+});
+```
+
+---
+
+## MVP Checklist
+- [ ] Company + User registration
+- [ ] Login / Logout with Sanctum
+- [ ] Roles: manager, employee
+- [ ] Global Scope for multi-tenancy
+- [ ] CRUD Shifts (manager)
+- [ ] CRUD Employees (manager)
+- [ ] CRUD Locations (manager)
+- [ ] Employee views own shifts
+- [ ] Clock in with GPS validation
+- [ ] Clock out
+- [ ] Pest tests for all features
