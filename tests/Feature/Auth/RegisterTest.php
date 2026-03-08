@@ -7,9 +7,8 @@ beforeEach(function () {
     $this->seed(\Database\Seeders\RoleSeeder::class);
 });
 
-it('registers a new company and manager', function () {
+it('registers a new user without a company', function () {
     $response = $this->postJson('/api/auth/register', [
-        'company_name' => 'Acme Corp',
         'name' => 'John Manager',
         'email' => 'john@acme.com',
         'password' => 'password123',
@@ -19,19 +18,21 @@ it('registers a new company and manager', function () {
     $response->assertCreated()
         ->assertJsonPath('data.name', 'John Manager')
         ->assertJsonPath('data.email', 'john@acme.com')
+        ->assertJsonPath('data.company_id', null)
         ->assertJsonStructure(['data', 'token', 'message']);
 
-    expect(Company::count())->toBe(1);
+    expect(Company::count())->toBe(0);
     expect(User::withoutGlobalScope('company')->count())->toBe(1);
 
     $user = User::withoutGlobalScope('company')->first();
-    expect($user->hasRole('manager'))->toBeTrue();
+    expect($user->company_id)->toBeNull();
+    expect($user->hasRole('manager'))->toBeFalse();
 });
 
 it('fails registration with missing fields', function () {
     $this->postJson('/api/auth/register', [])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['company_name', 'name', 'email', 'password']);
+        ->assertJsonValidationErrors(['name', 'email', 'password']);
 });
 
 it('fails registration with duplicate email', function () {
@@ -42,7 +43,6 @@ it('fails registration with duplicate email', function () {
     ]);
 
     $this->postJson('/api/auth/register', [
-        'company_name' => 'New Corp',
         'name' => 'Jane',
         'email' => 'existing@acme.com',
         'password' => 'password123',
