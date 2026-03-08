@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -22,6 +23,7 @@ class User extends Authenticatable
         'email',
         'password',
         'is_active',
+        'onboarding_step',
     ];
 
     protected $hidden = [
@@ -52,9 +54,9 @@ class User extends Authenticatable
         return $this->belongsTo(Company::class);
     }
 
-    public function shifts(): HasMany
+    public function shifts(): BelongsToMany
     {
-        return $this->hasMany(Shift::class, 'employee_id');
+        return $this->belongsToMany(Shift::class)->withTimestamps();
     }
 
     public function clockEntries(): HasMany

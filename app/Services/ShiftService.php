@@ -11,7 +11,7 @@ class ShiftService
     public function listForCompany(): Collection
     {
         return Shift::query()
-            ->with('employee')
+            ->with('employees')
             ->latest('start_time')
             ->get();
     }
@@ -19,7 +19,7 @@ class ShiftService
     public function listForEmployee(User $employee): Collection
     {
         return Shift::query()
-            ->where('employee_id', $employee->id)
+            ->whereHas('employees', fn ($q) => $q->where('users.id', $employee->id))
             ->where('status', 'published')
             ->latest('start_time')
             ->get();
@@ -30,7 +30,16 @@ class ShiftService
      */
     public function create(array $data): Shift
     {
-        return Shift::create($data);
+        $employeeIds = $data['employee_ids'] ?? [];
+        unset($data['employee_ids']);
+
+        $shift = Shift::create($data);
+
+        if (! empty($employeeIds)) {
+            $shift->employees()->attach($employeeIds);
+        }
+
+        return $shift->load('employees');
     }
 
     /**
@@ -38,9 +47,16 @@ class ShiftService
      */
     public function update(Shift $shift, array $data): Shift
     {
+        $employeeIds = $data['employee_ids'] ?? null;
+        unset($data['employee_ids']);
+
         $shift->update($data);
 
-        return $shift->fresh();
+        if ($employeeIds !== null) {
+            $shift->employees()->sync($employeeIds);
+        }
+
+        return $shift->fresh('employees');
     }
 
     public function delete(Shift $shift): void

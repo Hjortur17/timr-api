@@ -33,7 +33,10 @@ class CreateCompanyController extends Controller
                 'slug' => Str::slug($validated['name']).'-'.Str::random(5),
             ]);
 
-            $user->update(['company_id' => $company->id]);
+            $user->update([
+                'company_id' => $company->id,
+                'onboarding_step' => 2,
+            ]);
             $user->assignRole('manager');
 
             return $company;

@@ -17,12 +17,13 @@ class UpdateShiftRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employee_id' => ['sometimes', 'exists:users,id'],
             'title' => ['sometimes', 'string', 'max:255'],
-            'start_time' => ['sometimes', 'date'],
-            'end_time' => ['sometimes', 'date', 'after:start_time'],
+            'start_time' => ['sometimes', 'date_format:H:i'],
+            'end_time' => ['sometimes', 'date_format:H:i'],
             'notes' => ['nullable', 'string'],
             'status' => ['sometimes', 'in:draft,published,cancelled'],
+            'employee_ids' => ['nullable', 'array'],
+            'employee_ids.*' => ['exists:users,id'],
         ];
     }
 
@@ -32,7 +33,6 @@ class UpdateShiftRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'employee_id.exists' => 'The selected employee does not exist.',
             'end_time.after' => 'The end time must be after the start time.',
         ];
     }

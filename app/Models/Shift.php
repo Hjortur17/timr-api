@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Shift extends Model
@@ -14,7 +15,6 @@ class Shift extends Model
 
     protected $fillable = [
         'company_id',
-        'employee_id',
         'title',
         'start_time',
         'end_time',
@@ -24,10 +24,7 @@ class Shift extends Model
 
     protected function casts(): array
     {
-        return [
-            'start_time' => 'datetime',
-            'end_time' => 'datetime',
-        ];
+        return [];
     }
 
     protected static function booted(): void
@@ -44,9 +41,9 @@ class Shift extends Model
         return $this->belongsTo(Company::class);
     }
 
-    public function employee(): BelongsTo
+    public function employees(): BelongsToMany
     {
-        return $this->belongsTo(User::class, 'employee_id');
+        return $this->belongsToMany(User::class)->withTimestamps();
     }
 
     public function clockEntries(): HasMany

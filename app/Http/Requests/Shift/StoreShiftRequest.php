@@ -17,12 +17,13 @@ class StoreShiftRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employee_id' => ['required', 'exists:users,id'],
             'title' => ['required', 'string', 'max:255'],
-            'start_time' => ['required', 'date', 'after:now'],
-            'end_time' => ['required', 'date', 'after:start_time'],
+            'start_time' => ['required', 'date_format:H:i'],
+            'end_time' => ['required', 'date_format:H:i'],
             'notes' => ['nullable', 'string'],
             'status' => ['required', 'in:draft,published,cancelled'],
+            'employee_ids' => ['nullable', 'array'],
+            'employee_ids.*' => ['exists:users,id'],
         ];
     }
 
@@ -32,7 +33,6 @@ class StoreShiftRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'employee_id.exists' => 'The selected employee does not exist.',
             'end_time.after' => 'The end time must be after the start time.',
         ];
     }

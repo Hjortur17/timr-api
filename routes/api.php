@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\CreateCompanyController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\UpdateOnboardingController;
 use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\Employee\ClockController;
 use App\Http\Controllers\Employee\ShiftController as EmployeeShiftController;
@@ -17,6 +18,7 @@ Route::prefix('auth')->group(function () {
     Route::post('logout', [LoginController::class, 'logout'])->middleware('auth:sanctum');
     Route::get('user', UserController::class)->middleware('auth:sanctum');
     Route::post('company', CreateCompanyController::class)->middleware('auth:sanctum');
+    Route::patch('onboarding', UpdateOnboardingController::class)->middleware('auth:sanctum');
 });
 
 Route::middleware('auth:sanctum')->group(function () {

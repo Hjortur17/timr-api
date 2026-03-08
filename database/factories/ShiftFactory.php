@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Models\Company;
 use App\Models\Shift;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /** @extends Factory<Shift> */
@@ -19,7 +18,6 @@ class ShiftFactory extends Factory
 
         return [
             'company_id' => Company::factory(),
-            'employee_id' => User::factory(),
             'title' => fake()->randomElement(['Morning Shift', 'Afternoon Shift', 'Night Shift', 'Weekend Shift']),
             'start_time' => $start,
             'end_time' => $end,
