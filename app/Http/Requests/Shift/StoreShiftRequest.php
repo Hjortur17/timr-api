@@ -23,7 +23,7 @@ class StoreShiftRequest extends FormRequest
             'notes' => ['nullable', 'string'],
             'status' => ['required', 'in:draft,published,cancelled'],
             'employee_ids' => ['nullable', 'array'],
-            'employee_ids.*' => ['exists:users,id'],
+            'employee_ids.*' => ['exists:employees,id'],
         ];
     }
 

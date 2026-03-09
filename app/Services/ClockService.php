@@ -3,9 +3,9 @@
 namespace App\Services;
 
 use App\Models\ClockEntry;
+use App\Models\Employee;
 use App\Models\Location;
 use App\Models\Shift;
-use App\Models\User;
 use Illuminate\Validation\ValidationException;
 
 class ClockService
@@ -15,11 +15,11 @@ class ClockService
     /**
      * @throws ValidationException
      */
-    public function clockIn(User $user, Shift $shift, float $latitude, float $longitude): ClockEntry
+    public function clockIn(Employee $employee, Shift $shift, float $latitude, float $longitude): ClockEntry
     {
         $existingEntry = ClockEntry::query()
             ->where('shift_id', $shift->id)
-            ->where('user_id', $user->id)
+            ->where('employee_id', $employee->id)
             ->whereNull('clocked_out_at')
             ->first();
 
@@ -31,7 +31,7 @@ class ClockService
 
         $location = Location::query()
             ->withoutGlobalScope('company')
-            ->where('company_id', $user->company_id)
+            ->where('company_id', $employee->company_id)
             ->first();
 
         if ($location) {
@@ -40,7 +40,7 @@ class ClockService
 
         return ClockEntry::create([
             'shift_id' => $shift->id,
-            'user_id' => $user->id,
+            'employee_id' => $employee->id,
             'clocked_in_at' => now(),
             'clock_in_lat' => $latitude,
             'clock_in_lng' => $longitude,
@@ -50,10 +50,10 @@ class ClockService
     /**
      * @throws ValidationException
      */
-    public function clockOut(User $user): ClockEntry
+    public function clockOut(Employee $employee): ClockEntry
     {
         $entry = ClockEntry::query()
-            ->where('user_id', $user->id)
+            ->where('employee_id', $employee->id)
             ->whereNull('clocked_out_at')
             ->latest('clocked_in_at')
             ->first();

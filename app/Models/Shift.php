@@ -43,7 +43,7 @@ class Shift extends Model
 
     public function employees(): BelongsToMany
     {
-        return $this->belongsToMany(User::class)->withTimestamps();
+        return $this->belongsToMany(Employee::class)->withTimestamps();
     }
 
     public function clockEntries(): HasMany

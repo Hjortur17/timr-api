@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('clock_entries', function (Blueprint $table) {
             $table->id();
             $table->foreignId('shift_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
             $table->dateTime('clocked_in_at');
             $table->dateTime('clocked_out_at')->nullable();
             $table->decimal('clock_in_lat', 10, 7)->nullable();

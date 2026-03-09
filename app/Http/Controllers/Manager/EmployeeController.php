@@ -3,46 +3,53 @@
 namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\UserResource;
-use App\Models\User;
+use App\Http\Requests\Employee\StoreEmployeeRequest;
+use App\Http\Requests\Employee\UpdateEmployeeRequest;
+use App\Http\Resources\EmployeeResource;
+use App\Models\Employee;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 
 class EmployeeController extends Controller
 {
     public function index(): JsonResponse
     {
-        $employees = User::query()
-            ->role('employee')
-            ->get();
+        $employees = Employee::query()->get();
 
         return response()->json([
-            'data' => UserResource::collection($employees),
+            'data' => EmployeeResource::collection($employees),
             'message' => 'Success',
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreEmployeeRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:8'],
-        ]);
-
-        $employee = User::withoutGlobalScope('company')->create([
+        $employee = Employee::create([
             'company_id' => $request->user()->company_id,
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            ...$request->validated(),
         ]);
-
-        $employee->assignRole('employee');
 
         return response()->json([
-            'data' => new UserResource($employee),
-            'message' => 'Employee created successfully.',
+            'data' => new EmployeeResource($employee),
+            'message' => 'Starfsmanni bætt við.',
         ], 201);
+    }
+
+    public function update(UpdateEmployeeRequest $request, Employee $employee): JsonResponse
+    {
+        $employee->update($request->validated());
+
+        return response()->json([
+            'data' => new EmployeeResource($employee),
+            'message' => 'Starfsmaður uppfærður.',
+        ]);
+    }
+
+    public function destroy(Employee $employee): JsonResponse
+    {
+        $employee->delete();
+
+        return response()->json([
+            'message' => 'Starfsmanni eytt.',
+        ]);
     }
 }

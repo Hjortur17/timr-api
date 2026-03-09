@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->foreignId('company_id')->nullable()->after('id')->constrained()->cascadeOnDelete();
             $table->boolean('is_active')->default(true)->after('password');
+            $table->unsignedTinyInteger('onboarding_step')->default(1)->after('is_active');
         });
     }
 
@@ -18,7 +19,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->dropForeign(['company_id']);
-            $table->dropColumn(['company_id', 'is_active']);
+            $table->dropColumn(['company_id', 'is_active', 'onboarding_step']);
         });
     }
 };

@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Employee;
 use App\Models\Shift;
 use App\Models\User;
 
@@ -9,8 +10,17 @@ class ClockEntryPolicy
 {
     public function clockIn(User $user, Shift $shift): bool
     {
-        return $user->company_id === $shift->company_id
-            && $shift->employees()->where('users.id', $user->id)->exists();
+        $employee = Employee::query()
+            ->withoutGlobalScope('company')
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (! $employee) {
+            return false;
+        }
+
+        return $employee->company_id === $shift->company_id
+            && $shift->employees()->where('employees.id', $employee->id)->exists();
     }
 
     public function clockOut(User $user): bool

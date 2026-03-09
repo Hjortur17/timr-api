@@ -13,7 +13,7 @@ class ClockEntry extends Model
 
     protected $fillable = [
         'shift_id',
-        'user_id',
+        'employee_id',
         'clocked_in_at',
         'clocked_out_at',
         'clock_in_lat',
@@ -47,8 +47,8 @@ class ClockEntry extends Model
         return $this->belongsTo(Shift::class);
     }
 
-    public function user(): BelongsTo
+    public function employee(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Employee::class);
     }
 }

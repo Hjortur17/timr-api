@@ -25,6 +25,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('manager')->middleware('role:manager')->group(function () {
         Route::get('employees', [EmployeeController::class, 'index']);
         Route::post('employees', [EmployeeController::class, 'store']);
+        Route::put('employees/{employee:id}', [EmployeeController::class, 'update']);
+        Route::delete('employees/{employee:id}', [EmployeeController::class, 'destroy']);
 
         Route::get('shifts', [ManagerShiftController::class, 'index']);
         Route::post('shifts', [ManagerShiftController::class, 'store']);

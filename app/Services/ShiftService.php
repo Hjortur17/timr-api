@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Employee;
 use App\Models\Shift;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 
 class ShiftService
@@ -16,10 +16,10 @@ class ShiftService
             ->get();
     }
 
-    public function listForEmployee(User $employee): Collection
+    public function listForEmployee(Employee $employee): Collection
     {
         return Shift::query()
-            ->whereHas('employees', fn ($q) => $q->where('users.id', $employee->id))
+            ->whereHas('employees', fn ($q) => $q->where('employees.id', $employee->id))
             ->where('status', 'published')
             ->latest('start_time')
             ->get();

@@ -23,7 +23,7 @@ class UpdateShiftRequest extends FormRequest
             'notes' => ['nullable', 'string'],
             'status' => ['sometimes', 'in:draft,published,cancelled'],
             'employee_ids' => ['nullable', 'array'],
-            'employee_ids.*' => ['exists:users,id'],
+            'employee_ids.*' => ['exists:employees,id'],
         ];
     }
 

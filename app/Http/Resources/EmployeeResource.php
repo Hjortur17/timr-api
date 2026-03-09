@@ -5,8 +5,8 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/** @mixin \App\Models\ClockEntry */
-class ClockEntryResource extends JsonResource
+/** @mixin \App\Models\Employee */
+class EmployeeResource extends JsonResource
 {
     /**
      * @return array<string, mixed>
@@ -15,12 +15,11 @@ class ClockEntryResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'shift_id' => $this->shift_id,
-            'employee_id' => $this->employee_id,
-            'clocked_in_at' => $this->clocked_in_at,
-            'clocked_out_at' => $this->clocked_out_at,
-            'clock_in_lat' => $this->clock_in_lat,
-            'clock_in_lng' => $this->clock_in_lng,
+            'name' => $this->name,
+            'email' => $this->email,
+            'phone' => $this->phone,
+            'is_active' => $this->is_active,
+            'has_account' => $this->user_id !== null,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

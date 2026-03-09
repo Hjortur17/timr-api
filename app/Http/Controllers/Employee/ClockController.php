@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Clock\ClockInRequest;
 use App\Http\Resources\ClockEntryResource;
 use App\Models\ClockEntry;
+use App\Models\Employee;
 use App\Models\Shift;
 use App\Services\ClockService;
 use Illuminate\Http\JsonResponse;
@@ -18,12 +19,16 @@ class ClockController extends Controller
 
     public function clockIn(ClockInRequest $request): JsonResponse
     {
+        $employee = Employee::query()
+            ->where('user_id', $request->user()->id)
+            ->firstOrFail();
+
         $shift = Shift::findOrFail($request->validated('shift_id'));
 
         Gate::authorize('clockIn', [ClockEntry::class, $shift]);
 
         $entry = $this->clockService->clockIn(
-            $request->user(),
+            $employee,
             $shift,
             $request->validated('latitude'),
             $request->validated('longitude'),
@@ -37,7 +42,11 @@ class ClockController extends Controller
 
     public function clockOut(Request $request): JsonResponse
     {
-        $entry = $this->clockService->clockOut($request->user());
+        $employee = Employee::query()
+            ->where('user_id', $request->user()->id)
+            ->firstOrFail();
+
+        $entry = $this->clockService->clockOut($employee);
 
         return response()->json([
             'data' => new ClockEntryResource($entry),
