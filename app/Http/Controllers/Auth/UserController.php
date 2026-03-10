@@ -11,8 +11,10 @@ class UserController extends Controller
 {
     public function __invoke(Request $request): JsonResponse
     {
+        $user = $request->user()->load('companies');
+
         return response()->json([
-            'data' => new UserResource($request->user()),
+            'data' => new UserResource($user),
         ]);
     }
 }

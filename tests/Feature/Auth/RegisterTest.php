@@ -3,10 +3,6 @@
 use App\Models\Company;
 use App\Models\User;
 
-beforeEach(function () {
-    $this->seed(\Database\Seeders\RoleSeeder::class);
-});
-
 it('registers a new user without a company', function () {
     $response = $this->postJson('/api/auth/register', [
         'name' => 'John Manager',
@@ -26,7 +22,7 @@ it('registers a new user without a company', function () {
 
     $user = User::withoutGlobalScope('company')->first();
     expect($user->company_id)->toBeNull();
-    expect($user->hasRole('manager'))->toBeFalse();
+    expect($user->companies)->toHaveCount(0);
 });
 
 it('fails registration with missing fields', function () {

@@ -2,18 +2,22 @@
 
 use App\Models\ClockEntry;
 use App\Models\Company;
+use App\Models\Employee;
 use App\Models\Location;
 use App\Models\Shift;
 use App\Models\User;
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\RoleSeeder::class);
     $this->company = Company::factory()->create();
-    $this->employee = User::factory()->create([
+    $this->user = User::factory()->create([
         'company_id' => $this->company->id,
     ]);
-    $this->employee->assignRole('employee');
-    $this->actingAs($this->employee);
+    $this->employee = Employee::create([
+        'company_id' => $this->company->id,
+        'user_id' => $this->user->id,
+        'name' => $this->user->name,
+    ]);
+    $this->actingAs($this->user);
     $this->location = Location::factory()->create([
         'company_id' => $this->company->id,
         'latitude' => 64.1355,
@@ -25,8 +29,8 @@ beforeEach(function () {
 it('allows an employee to clock in within geo fence', function () {
     $shift = Shift::factory()->create([
         'company_id' => $this->company->id,
-        'employee_id' => $this->employee->id,
     ]);
+    $shift->employees()->attach($this->employee);
 
     $this->postJson('/api/employee/clock-in', [
         'shift_id' => $shift->id,
@@ -40,8 +44,8 @@ it('allows an employee to clock in within geo fence', function () {
 it('rejects clock in when employee is outside geo fence', function () {
     $shift = Shift::factory()->create([
         'company_id' => $this->company->id,
-        'employee_id' => $this->employee->id,
     ]);
+    $shift->employees()->attach($this->employee);
 
     $this->postJson('/api/employee/clock-in', [
         'shift_id' => $shift->id,
@@ -51,13 +55,18 @@ it('rejects clock in when employee is outside geo fence', function () {
 });
 
 it('prevents clocking in to another employees shift', function () {
-    $otherEmployee = User::factory()->create([
+    $otherUser = User::factory()->create([
         'company_id' => $this->company->id,
+    ]);
+    $otherEmployee = Employee::create([
+        'company_id' => $this->company->id,
+        'user_id' => $otherUser->id,
+        'name' => $otherUser->name,
     ]);
     $shift = Shift::factory()->create([
         'company_id' => $this->company->id,
-        'employee_id' => $otherEmployee->id,
     ]);
+    $shift->employees()->attach($otherEmployee);
 
     $this->postJson('/api/employee/clock-in', [
         'shift_id' => $shift->id,
@@ -69,14 +78,13 @@ it('prevents clocking in to another employees shift', function () {
 it('allows an employee to clock out', function () {
     $shift = Shift::factory()->create([
         'company_id' => $this->company->id,
-        'employee_id' => $this->employee->id,
     ]);
+    $shift->employees()->attach($this->employee);
 
-    ClockEntry::factory()->create([
+    ClockEntry::create([
         'shift_id' => $shift->id,
-        'user_id' => $this->employee->id,
+        'employee_id' => $this->employee->id,
         'clocked_in_at' => now(),
-        'clocked_out_at' => null,
     ]);
 
     $this->postJson('/api/employee/clock-out')
@@ -94,14 +102,13 @@ it('fails clock out when not clocked in', function () {
 it('prevents double clock in for the same shift', function () {
     $shift = Shift::factory()->create([
         'company_id' => $this->company->id,
-        'employee_id' => $this->employee->id,
     ]);
+    $shift->employees()->attach($this->employee);
 
-    ClockEntry::factory()->create([
+    ClockEntry::create([
         'shift_id' => $shift->id,
-        'user_id' => $this->employee->id,
+        'employee_id' => $this->employee->id,
         'clocked_in_at' => now(),
-        'clocked_out_at' => null,
     ]);
 
     $this->postJson('/api/employee/clock-in', [

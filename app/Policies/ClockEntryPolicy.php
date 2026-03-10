@@ -25,6 +25,9 @@ class ClockEntryPolicy
 
     public function clockOut(User $user): bool
     {
-        return $user->hasRole('employee');
+        return Employee::query()
+            ->withoutGlobalScope('company')
+            ->where('user_id', $user->id)
+            ->exists();
     }
 }

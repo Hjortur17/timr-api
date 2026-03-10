@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\CompanyRole;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\Company;
@@ -37,13 +38,14 @@ class CreateCompanyController extends Controller
                 'company_id' => $company->id,
                 'onboarding_step' => 2,
             ]);
-            $user->assignRole('manager');
+
+            $user->companies()->attach($company->id, ['role' => CompanyRole::Owner->value]);
 
             return $company;
         });
 
         return response()->json([
-            'data' => new UserResource($user->fresh()),
+            'data' => new UserResource($user->fresh()->load('companies')),
             'message' => 'Company created successfully.',
         ], 201);
     }

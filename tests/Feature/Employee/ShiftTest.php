@@ -1,31 +1,35 @@
 <?php
 
 use App\Models\Company;
+use App\Models\Employee;
 use App\Models\Shift;
 use App\Models\User;
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\RoleSeeder::class);
     $this->company = Company::factory()->create();
-    $this->employee = User::factory()->create([
+    $this->user = User::factory()->create([
         'company_id' => $this->company->id,
     ]);
-    $this->employee->assignRole('employee');
-    $this->actingAs($this->employee);
+    $this->employee = Employee::create([
+        'company_id' => $this->company->id,
+        'user_id' => $this->user->id,
+        'name' => $this->user->name,
+    ]);
+    $this->actingAs($this->user);
 });
 
 it('allows an employee to view their own published shifts', function () {
-    Shift::factory()->count(2)->create([
+    $shifts = Shift::factory()->count(2)->create([
         'company_id' => $this->company->id,
-        'employee_id' => $this->employee->id,
         'status' => 'published',
     ]);
+    $shifts->each(fn ($s) => $s->employees()->attach($this->employee));
 
-    Shift::factory()->create([
+    $draftShift = Shift::factory()->create([
         'company_id' => $this->company->id,
-        'employee_id' => $this->employee->id,
         'status' => 'draft',
     ]);
+    $draftShift->employees()->attach($this->employee);
 
     $this->getJson('/api/employee/shifts')
         ->assertOk()
@@ -33,15 +37,20 @@ it('allows an employee to view their own published shifts', function () {
 });
 
 it('does not show shifts assigned to other employees', function () {
-    $otherEmployee = User::factory()->create([
+    $otherUser = User::factory()->create([
         'company_id' => $this->company->id,
+    ]);
+    $otherEmployee = Employee::create([
+        'company_id' => $this->company->id,
+        'user_id' => $otherUser->id,
+        'name' => $otherUser->name,
     ]);
 
-    Shift::factory()->create([
+    $shift = Shift::factory()->create([
         'company_id' => $this->company->id,
-        'employee_id' => $otherEmployee->id,
         'status' => 'published',
     ]);
+    $shift->employees()->attach($otherEmployee);
 
     $this->getJson('/api/employee/shifts')
         ->assertOk()
@@ -52,7 +61,7 @@ it('prevents a manager from accessing employee shift routes', function () {
     $manager = User::factory()->create([
         'company_id' => $this->company->id,
     ]);
-    $manager->assignRole('manager');
+    $manager->companies()->attach($this->company, ['role' => 'owner']);
     $this->actingAs($manager);
 
     $this->getJson('/api/employee/shifts')->assertForbidden();

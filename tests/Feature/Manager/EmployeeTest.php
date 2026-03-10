@@ -1,23 +1,24 @@
 <?php
 
 use App\Models\Company;
+use App\Models\Employee;
 use App\Models\User;
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\RoleSeeder::class);
     $this->company = Company::factory()->create();
     $this->manager = User::factory()->create([
         'company_id' => $this->company->id,
     ]);
-    $this->manager->assignRole('manager');
+    $this->manager->companies()->attach($this->company, ['role' => 'owner']);
     $this->actingAs($this->manager);
 });
 
 it('allows a manager to list employees', function () {
-    $employees = User::factory()->count(3)->create([
-        'company_id' => $this->company->id,
+    Employee::insert([
+        ['company_id' => $this->company->id, 'name' => 'Emp 1', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+        ['company_id' => $this->company->id, 'name' => 'Emp 2', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+        ['company_id' => $this->company->id, 'name' => 'Emp 3', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
     ]);
-    $employees->each(fn ($e) => $e->assignRole('employee'));
 
     $this->getJson('/api/manager/employees')
         ->assertOk()
@@ -28,46 +29,40 @@ it('allows a manager to create an employee', function () {
     $response = $this->postJson('/api/manager/employees', [
         'name' => 'Jane Employee',
         'email' => 'jane@acme.com',
-        'password' => 'password123',
     ]);
 
     $response->assertCreated()
         ->assertJsonPath('data.name', 'Jane Employee')
         ->assertJsonPath('data.email', 'jane@acme.com');
 
-    $employee = User::withoutGlobalScope('company')->where('email', 'jane@acme.com')->first();
-    expect($employee->hasRole('employee'))->toBeTrue();
+    expect(Employee::count())->toBe(1);
+    $employee = Employee::first();
     expect($employee->company_id)->toBe($this->company->id);
 });
 
-it('prevents creating an employee with duplicate email', function () {
-    User::factory()->create([
-        'company_id' => $this->company->id,
-        'email' => 'existing@acme.com',
-    ]);
-
+it('validates employee creation requires name', function () {
     $this->postJson('/api/manager/employees', [
-        'name' => 'Duplicate',
-        'email' => 'existing@acme.com',
-        'password' => 'password123',
+        'email' => 'test@acme.com',
     ])->assertUnprocessable()
-        ->assertJsonValidationErrors(['email']);
+        ->assertJsonValidationErrors(['name']);
 });
 
 it('does not list employees from another company', function () {
     $otherCompany = Company::factory()->create();
-    $otherEmployee = User::factory()->create(['company_id' => $otherCompany->id]);
-    $otherEmployee->assignRole('employee');
+    Employee::create([
+        'company_id' => $otherCompany->id,
+        'name' => 'Other Employee',
+    ]);
 
     $this->getJson('/api/manager/employees')
         ->assertOk()
         ->assertJsonCount(0, 'data');
 });
 
-it('prevents an employee from accessing manager employee routes', function () {
-    $employee = User::factory()->create(['company_id' => $this->company->id]);
-    $employee->assignRole('employee');
-    $this->actingAs($employee);
+it('prevents a non-manager from accessing manager employee routes', function () {
+    $user = User::factory()->create(['company_id' => $this->company->id]);
+    $user->companies()->attach($this->company, ['role' => 'accountant']);
+    $this->actingAs($user);
 
     $this->getJson('/api/manager/employees')->assertForbidden();
 });

@@ -4,13 +4,12 @@ use App\Models\Company;
 use App\Models\User;
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\RoleSeeder::class);
     $this->company = Company::factory()->create();
     $this->user = User::factory()->create([
         'company_id' => $this->company->id,
         'password' => bcrypt('password123'),
     ]);
-    $this->user->assignRole('manager');
+    $this->user->companies()->attach($this->company, ['role' => 'owner']);
 });
 
 it('logs in with valid credentials', function () {

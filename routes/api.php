@@ -22,7 +22,7 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::prefix('manager')->middleware('role:manager')->group(function () {
+    Route::prefix('manager')->middleware('company.role:owner,admin')->group(function () {
         Route::get('employees', [EmployeeController::class, 'index']);
         Route::post('employees', [EmployeeController::class, 'store']);
         Route::put('employees/{employee:id}', [EmployeeController::class, 'update']);
@@ -37,7 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('locations', [LocationController::class, 'store']);
     });
 
-    Route::prefix('employee')->middleware('role:employee')->group(function () {
+    Route::prefix('employee')->middleware('employee')->group(function () {
         Route::get('shifts', [EmployeeShiftController::class, 'index']);
         Route::post('clock-in', [ClockController::class, 'clockIn']);
         Route::post('clock-out', [ClockController::class, 'clockOut']);

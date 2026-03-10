@@ -5,12 +5,11 @@ use App\Models\Location;
 use App\Models\User;
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\RoleSeeder::class);
     $this->company = Company::factory()->create();
     $this->manager = User::factory()->create([
         'company_id' => $this->company->id,
     ]);
-    $this->manager->assignRole('manager');
+    $this->manager->companies()->attach($this->company, ['role' => 'owner']);
     $this->actingAs($this->manager);
 });
 

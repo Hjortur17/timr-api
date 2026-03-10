@@ -3,10 +3,6 @@
 use App\Models\Company;
 use App\Models\User;
 
-beforeEach(function () {
-    $this->seed(\Database\Seeders\RoleSeeder::class);
-});
-
 it('creates a company for a user without one', function () {
     $user = User::withoutGlobalScope('company')->create([
         'name' => 'John',
@@ -24,7 +20,8 @@ it('creates a company for a user without one', function () {
 
     $user->refresh();
     expect($user->company_id)->not->toBeNull();
-    expect($user->hasRole('manager'))->toBeTrue();
+    expect($user->isManager())->toBeTrue();
+    expect($user->companyRole()->value)->toBe('owner');
     expect(Company::count())->toBe(1);
     expect(Company::first()->name)->toBe('Acme Corp');
 });
@@ -32,6 +29,7 @@ it('creates a company for a user without one', function () {
 it('rejects company creation when user already has a company', function () {
     $company = Company::factory()->create();
     $user = User::factory()->create(['company_id' => $company->id]);
+    $user->companies()->attach($company, ['role' => 'owner']);
 
     $this->actingAs($user)->postJson('/api/auth/company', [
         'name' => 'Another Corp',
