@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\StoreEmployeeRequest;
 use App\Http\Requests\Employee\UpdateEmployeeRequest;
 use App\Http\Resources\EmployeeResource;
+use App\Mail\EmployeeInvite;
 use App\Models\Employee;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class EmployeeController extends Controller
 {
@@ -50,6 +53,20 @@ class EmployeeController extends Controller
 
         return response()->json([
             'message' => 'Starfsmanni eytt.',
+        ]);
+    }
+
+    public function sendInvite(Employee $employee): JsonResponse
+    {
+        $employee->update([
+            'invite_token' => Str::uuid()->toString(),
+            'invite_sent_at' => now(),
+        ]);
+
+        Mail::to($employee->email)->send(new EmployeeInvite($employee));
+
+        return response()->json([
+            'message' => 'Hlekkur sendur.',
         ]);
     }
 }

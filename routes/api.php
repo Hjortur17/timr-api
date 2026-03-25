@@ -28,6 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('employees', [EmployeeController::class, 'store']);
         Route::put('employees/{employee:id}', [EmployeeController::class, 'update']);
         Route::delete('employees/{employee:id}', [EmployeeController::class, 'destroy']);
+        Route::post('employees/{employee:id}/invite', [EmployeeController::class, 'sendInvite']);
 
         Route::get('shifts', [ManagerShiftController::class, 'index']);
         Route::post('shifts', [ManagerShiftController::class, 'store']);

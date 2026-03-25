@@ -13,7 +13,8 @@
         "laravel/framework": "^12.0",
         "laravel/nightwatch": "^1.24",
         "laravel/sanctum": "^4.3",
-        "laravel/tinker": "^2.10.1"
+        "laravel/tinker": "^2.10.1",
+        "resend/resend-laravel": "^1.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
