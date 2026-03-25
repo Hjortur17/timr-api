@@ -23,6 +23,9 @@ class ShiftAssignmentController extends Controller
         $assignments = EmployeeShift::query()
             ->whereBetween('date', [$request->input('from'), $request->input('to')])
             ->with('shift', 'employee')
+            ->join('shifts', 'employee_shift.shift_id', '=', 'shifts.id')
+            ->orderBy('shifts.start_time')
+            ->select('employee_shift.*')
             ->get();
 
         return response()->json([

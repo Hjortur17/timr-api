@@ -13,7 +13,7 @@ class ShiftService
     {
         return Shift::query()
             ->with('employees')
-            ->latest('start_time')
+            ->oldest('start_time')
             ->get();
     }
 
@@ -22,7 +22,7 @@ class ShiftService
         return Shift::query()
             ->whereHas('employees', fn ($q) => $q->where('employees.id', $employee->id))
             ->where('status', 'published')
-            ->latest('start_time')
+            ->oldest('start_time')
             ->get();
     }
 
