@@ -17,13 +17,22 @@ class ShiftService
             ->get();
     }
 
-    public function listForEmployee(Employee $employee): Collection
+    public function listAssignmentsForEmployee(Employee $employee, ?string $from = null, ?string $to = null): Collection
     {
-        return Shift::query()
-            ->whereHas('employees', fn ($q) => $q->where('employees.id', $employee->id))
-            ->where('status', 'published')
-            ->oldest('start_time')
-            ->get();
+        $query = EmployeeShift::query()
+            ->with('shift')
+            ->where('employee_id', $employee->id)
+            ->where('published', true);
+
+        if ($from) {
+            $query->where('date', '>=', $from);
+        }
+
+        if ($to) {
+            $query->where('date', '<=', $to);
+        }
+
+        return $query->oldest('date')->get();
     }
 
     /**
