@@ -30,7 +30,7 @@ it('allows an employee to clock in within geo fence', function () {
     $shift = Shift::factory()->create([
         'company_id' => $this->company->id,
     ]);
-    $shift->employees()->attach($this->employee);
+    $shift->employees()->attach($this->employee, ['date' => today()->toDateString(), 'published' => true]);
 
     $this->postJson('/api/employee/clock-in', [
         'shift_id' => $shift->id,
@@ -45,7 +45,7 @@ it('rejects clock in when employee is outside geo fence', function () {
     $shift = Shift::factory()->create([
         'company_id' => $this->company->id,
     ]);
-    $shift->employees()->attach($this->employee);
+    $shift->employees()->attach($this->employee, ['date' => today()->toDateString(), 'published' => true]);
 
     $this->postJson('/api/employee/clock-in', [
         'shift_id' => $shift->id,
@@ -66,7 +66,7 @@ it('prevents clocking in to another employees shift', function () {
     $shift = Shift::factory()->create([
         'company_id' => $this->company->id,
     ]);
-    $shift->employees()->attach($otherEmployee);
+    $shift->employees()->attach($otherEmployee, ['date' => today()->toDateString(), 'published' => true]);
 
     $this->postJson('/api/employee/clock-in', [
         'shift_id' => $shift->id,
@@ -79,7 +79,7 @@ it('allows an employee to clock out', function () {
     $shift = Shift::factory()->create([
         'company_id' => $this->company->id,
     ]);
-    $shift->employees()->attach($this->employee);
+    $shift->employees()->attach($this->employee, ['date' => today()->toDateString(), 'published' => true]);
 
     ClockEntry::create([
         'shift_id' => $shift->id,
@@ -103,7 +103,7 @@ it('prevents double clock in for the same shift', function () {
     $shift = Shift::factory()->create([
         'company_id' => $this->company->id,
     ]);
-    $shift->employees()->attach($this->employee);
+    $shift->employees()->attach($this->employee, ['date' => today()->toDateString(), 'published' => true]);
 
     ClockEntry::create([
         'shift_id' => $shift->id,

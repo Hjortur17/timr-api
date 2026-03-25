@@ -53,7 +53,12 @@ class Employee extends Model
 
     public function shifts(): BelongsToMany
     {
-        return $this->belongsToMany(Shift::class)->withTimestamps();
+        return $this->belongsToMany(Shift::class)->withPivot('date', 'published')->withTimestamps();
+    }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(EmployeeShift::class);
     }
 
     public function clockEntries(): HasMany

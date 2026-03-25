@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Shift\PublishShiftsRequest;
 use App\Http\Requests\Shift\StoreShiftRequest;
 use App\Http\Requests\Shift\UpdateShiftRequest;
 use App\Http\Resources\ShiftResource;
@@ -57,6 +58,21 @@ class ShiftController extends Controller
 
         return response()->json([
             'message' => 'Shift deleted successfully.',
+        ]);
+    }
+
+    public function publish(PublishShiftsRequest $request): JsonResponse
+    {
+        $this->authorize('viewAny', Shift::class);
+
+        $updated = $this->shiftService->publishAssignmentsInRange(
+            $request->validated('from'),
+            $request->validated('to'),
+        );
+
+        return response()->json([
+            'message' => 'Shifts published successfully.',
+            'updated_count' => $updated,
         ]);
     }
 }

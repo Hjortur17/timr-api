@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Employee;
+use App\Models\EmployeeShift;
 use App\Models\Shift;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -62,5 +63,12 @@ class ShiftService
     public function delete(Shift $shift): void
     {
         $shift->delete();
+    }
+
+    public function publishAssignmentsInRange(string $from, string $to): int
+    {
+        return EmployeeShift::query()
+            ->whereBetween('date', [$from, $to])
+            ->update(['published' => true]);
     }
 }
