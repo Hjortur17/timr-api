@@ -21,7 +21,6 @@ class StoreShiftRequest extends FormRequest
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i'],
             'notes' => ['nullable', 'string'],
-            'status' => ['required', 'in:draft,published,cancelled'],
             'employee_ids' => ['nullable', 'array'],
             'employee_ids.*' => ['exists:employees,id'],
         ];

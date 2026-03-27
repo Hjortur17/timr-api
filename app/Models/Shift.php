@@ -19,7 +19,6 @@ class Shift extends Model
         'start_time',
         'end_time',
         'notes',
-        'status',
     ];
 
     protected function casts(): array

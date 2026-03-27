@@ -21,15 +21,13 @@ beforeEach(function () {
 it('allows an employee to view their own published shifts', function () {
     $shifts = Shift::factory()->count(2)->create([
         'company_id' => $this->company->id,
-        'status' => 'published',
     ]);
     $shifts->each(fn ($s) => $s->employees()->attach($this->employee, ['date' => today()->toDateString(), 'published' => true]));
 
-    $draftShift = Shift::factory()->create([
+    $unpublishedShift = Shift::factory()->create([
         'company_id' => $this->company->id,
-        'status' => 'draft',
     ]);
-    $draftShift->employees()->attach($this->employee, ['date' => today()->toDateString(), 'published' => true]);
+    $unpublishedShift->employees()->attach($this->employee, ['date' => today()->toDateString(), 'published' => false]);
 
     $this->getJson('/api/employee/shifts')
         ->assertOk()
@@ -48,7 +46,6 @@ it('does not show shifts assigned to other employees', function () {
 
     $shift = Shift::factory()->create([
         'company_id' => $this->company->id,
-        'status' => 'published',
     ]);
     $shift->employees()->attach($otherEmployee, ['date' => today()->toDateString(), 'published' => true]);
 

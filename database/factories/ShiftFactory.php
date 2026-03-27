@@ -22,21 +22,6 @@ class ShiftFactory extends Factory
             'start_time' => $start,
             'end_time' => $end,
             'notes' => fake()->optional()->sentence(),
-            'status' => 'published',
         ];
-    }
-
-    public function draft(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'status' => 'draft',
-        ]);
-    }
-
-    public function cancelled(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'status' => 'cancelled',
-        ]);
     }
 }

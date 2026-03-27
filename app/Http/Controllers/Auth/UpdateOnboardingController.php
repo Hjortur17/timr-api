@@ -19,7 +19,7 @@ class UpdateOnboardingController extends Controller
         $user->update(['onboarding_step' => $validated['step']]);
 
         return response()->json([
-            'data' => new UserResource($user->fresh()),
+            'data' => new UserResource($user->fresh()->load('companies')),
             'message' => 'Onboarding step updated.',
         ]);
     }

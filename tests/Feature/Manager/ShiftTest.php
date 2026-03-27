@@ -28,7 +28,6 @@ it('allows a manager to create a shift', function () {
         'title' => 'Morning Shift',
         'start_time' => '08:00',
         'end_time' => '16:00',
-        'status' => 'published',
     ]);
 
     $response->assertCreated()
