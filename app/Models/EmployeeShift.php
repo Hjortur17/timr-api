@@ -18,6 +18,7 @@ class EmployeeShift extends Model
         'employee_id',
         'date',
         'published',
+        'reminder_sent_at',
     ];
 
     protected function casts(): array
@@ -25,6 +26,7 @@ class EmployeeShift extends Model
         return [
             'date' => 'date',
             'published' => 'boolean',
+            'reminder_sent_at' => 'datetime',
         ];
     }
 

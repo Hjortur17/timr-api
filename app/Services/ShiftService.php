@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\NotificationType;
 use App\Models\Employee;
 use App\Models\EmployeeShift;
 use App\Models\Shift;
+use App\Notifications\ShiftPublishedNotification;
 use Illuminate\Database\Eloquent\Collection;
 
 class ShiftService
@@ -76,8 +78,28 @@ class ShiftService
 
     public function publishAssignmentsInRange(string $from, string $to): int
     {
-        return EmployeeShift::query()
+        $count = EmployeeShift::query()
             ->whereBetween('date', [$from, $to])
             ->update(['published' => true]);
+
+        // Dispatch one batched email per affected employee
+        $assignments = EmployeeShift::query()
+            ->with(['shift', 'employee.notificationPreferences'])
+            ->whereBetween('date', [$from, $to])
+            ->where('published', true)
+            ->get();
+
+        $assignments
+            ->groupBy('employee_id')
+            ->each(function (Collection $employeeAssignments) {
+                /** @var Employee $employee */
+                $employee = $employeeAssignments->first()->employee;
+
+                if ($employee && $employee->prefersNotification(NotificationType::ShiftPublished)) {
+                    $employee->notify(new ShiftPublishedNotification($employeeAssignments));
+                }
+            });
+
+        return $count;
     }
 }

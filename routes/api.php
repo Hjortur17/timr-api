@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\UpdateOnboardingController;
 use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\Employee\ClockController;
+use App\Http\Controllers\Employee\NotificationPreferenceController;
 use App\Http\Controllers\Employee\ShiftController as EmployeeShiftController;
 use App\Http\Controllers\Manager\EmployeeController;
 use App\Http\Controllers\Manager\LocationController;
@@ -49,5 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('shifts', [EmployeeShiftController::class, 'index']);
         Route::post('clock-in', [ClockController::class, 'clockIn']);
         Route::post('clock-out', [ClockController::class, 'clockOut']);
+        Route::get('notification-preferences', [NotificationPreferenceController::class, 'index']);
+        Route::put('notification-preferences', [NotificationPreferenceController::class, 'update']);
     });
 });

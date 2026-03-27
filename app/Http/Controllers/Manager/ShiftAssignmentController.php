@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Manager;
 
+use App\Enums\NotificationType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Shift\StoreShiftAssignmentRequest;
 use App\Http\Requests\Shift\UpdateShiftAssignmentRequest;
 use App\Http\Resources\ShiftAssignmentResource;
 use App\Models\EmployeeShift;
+use App\Notifications\ShiftChangedNotification;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -64,9 +66,17 @@ class ShiftAssignmentController extends Controller
     {
         $this->authorize('update', $shiftAssignment);
 
+        $wasPublished = $shiftAssignment->published;
+
         $shiftAssignment->update($request->validated());
 
-        $shiftAssignment->load('shift', 'employee');
+        $shiftAssignment->load('shift', 'employee.notificationPreferences');
+
+        if ($wasPublished && $shiftAssignment->employee?->prefersNotification(NotificationType::ShiftChanged)) {
+            $shiftAssignment->employee->notify(
+                new ShiftChangedNotification($shiftAssignment, 'updated')
+            );
+        }
 
         return response()->json([
             'data' => new ShiftAssignmentResource($shiftAssignment),
@@ -78,7 +88,18 @@ class ShiftAssignmentController extends Controller
     {
         $this->authorize('delete', $shiftAssignment);
 
+        $shiftAssignment->load('shift', 'employee.notificationPreferences');
+
+        $shouldNotify = $shiftAssignment->published
+            && $shiftAssignment->employee?->prefersNotification(NotificationType::ShiftChanged);
+
         $shiftAssignment->delete();
+
+        if ($shouldNotify) {
+            $shiftAssignment->employee->notify(
+                new ShiftChangedNotification($shiftAssignment, 'deleted')
+            );
+        }
 
         return response()->json([
             'message' => 'Shift assignment deleted successfully.',
