@@ -19,6 +19,7 @@ class UpdateShiftAssignmentRequest extends FormRequest
         return [
             'date' => ['sometimes', 'date_format:Y-m-d'],
             'published' => ['sometimes', 'boolean'],
+            'employee_id' => ['sometimes', 'integer', 'exists:employees,id'],
         ];
     }
 }
