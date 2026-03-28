@@ -35,7 +35,7 @@ class SendShiftReminders extends Command
             ->with(["shift", "employee.notificationPreferences"])
             ->where("published", true)
             ->whereNull("reminder_sent_at")
-            ->where("date", $targetDate)
+            ->whereDate("date", $targetDate)
             ->whereHas("shift", function ($query) use (
                 $windowStartTime,
                 $windowEndTime,

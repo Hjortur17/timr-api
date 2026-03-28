@@ -3,6 +3,8 @@
 use App\Http\Controllers\Auth\CreateCompanyController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\SocialAccountController;
+use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Auth\UpdateOnboardingController;
 use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\Employee\ClockController;
@@ -12,6 +14,7 @@ use App\Http\Controllers\Manager\EmployeeController;
 use App\Http\Controllers\Manager\LocationController;
 use App\Http\Controllers\Manager\ShiftAssignmentController as ManagerShiftAssignmentController;
 use App\Http\Controllers\Manager\ShiftController as ManagerShiftController;
+use App\Http\Controllers\Manager\ShiftTemplateController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -21,6 +24,12 @@ Route::prefix('auth')->group(function () {
     Route::get('user', UserController::class)->middleware('auth:sanctum');
     Route::post('company', CreateCompanyController::class)->middleware('auth:sanctum');
     Route::patch('onboarding', UpdateOnboardingController::class)->middleware('auth:sanctum');
+
+    Route::get('redirect/{provider}', [SocialAuthController::class, 'redirect']);
+    Route::get('callback/{provider}', [SocialAuthController::class, 'callback']);
+    Route::post('social/{provider}', [SocialAuthController::class, 'token']);
+    Route::get('social-accounts', [SocialAccountController::class, 'index'])->middleware('auth:sanctum');
+    Route::delete('social-accounts/{socialAccount}', [SocialAccountController::class, 'destroy'])->middleware('auth:sanctum');
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -44,6 +53,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('locations', [LocationController::class, 'index']);
         Route::post('locations', [LocationController::class, 'store']);
+
+        Route::get('shift-templates', [ShiftTemplateController::class, 'index']);
+        Route::post('shift-templates', [ShiftTemplateController::class, 'store']);
+        Route::put('shift-templates/{shiftTemplate}', [ShiftTemplateController::class, 'update']);
+        Route::delete('shift-templates/{shiftTemplate}', [ShiftTemplateController::class, 'destroy']);
+        Route::post('shift-templates/{shiftTemplate}/generate', [ShiftTemplateController::class, 'generate']);
     });
 
     Route::prefix('employee')->middleware('employee')->group(function () {

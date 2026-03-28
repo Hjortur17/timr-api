@@ -22,34 +22,42 @@ class ShiftChangedNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ["mail"];
     }
 
     public function toMail(object $notifiable): MailMessage
     {
         $shift = $this->assignment->shift;
-        $date = $this->assignment->date->translatedFormat('l, j. F Y');
+        $date = $this->assignment->date->translatedFormat("l, j. F Y");
         $start = substr($shift->start_time, 0, 5);
         $end = substr($shift->end_time, 0, 5);
 
-        if ($this->changeType === 'deleted') {
-            return (new MailMessage)
-                ->subject('Vakt þinni hefur verið eytt — Timr')
-                ->greeting('Hæ, '.$notifiable->name.'!')
+        if ($this->changeType === "deleted") {
+            return new MailMessage()
+                ->subject("Vakt þinni hefur verið eytt — Timr")
+                ->greeting("Hæ, " . $notifiable->name . "!")
                 ->line("Vakt þinni þann **{$date}** hefur verið eytt.")
                 ->line("Vakt: {$shift->title} ({$start}–{$end})")
-                ->action('Sjá vaktayfirlit', config('app.frontend_url').'/dashboard/my-shifts')
-                ->line('Hafðu samband við yfirmann þinn ef þig vantar frekari upplýsingar.')
-                ->salutation('Kveðja, Timr');
+                ->action(
+                    "Sjá vaktayfirlit",
+                    config("app.frontend_url") . "/dashboard/shifts",
+                )
+                ->line(
+                    "Hafðu samband við yfirmann þinn ef þig vantar frekari upplýsingar.",
+                )
+                ->salutation("Kveðja, Timr");
         }
 
-        return (new MailMessage)
-            ->subject('Vakt þín hefur verið breytt — Timr')
-            ->greeting('Hæ, '.$notifiable->name.'!')
+        return new MailMessage()
+            ->subject("Vakt þín hefur verið breytt — Timr")
+            ->greeting("Hæ, " . $notifiable->name . "!")
             ->line("Vakt þín þann **{$date}** hefur verið uppfærð.")
             ->line("Vakt: {$shift->title} ({$start}–{$end})")
-            ->action('Sjá vaktayfirlit', config('app.frontend_url').'/dashboard/my-shifts')
-            ->line('Hafðu samband við yfirmann þinn ef eitthvað er rangt.')
-            ->salutation('Kveðja, Timr');
+            ->action(
+                "Sjá vaktayfirlit",
+                config("app.frontend_url") . "/dashboard/shifts",
+            )
+            ->line("Hafðu samband við yfirmann þinn ef eitthvað er rangt.")
+            ->salutation("Kveðja, Timr");
     }
 }
