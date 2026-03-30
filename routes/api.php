@@ -43,8 +43,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('shifts', [ManagerShiftController::class, 'index']);
         Route::post('shifts', [ManagerShiftController::class, 'store']);
         Route::put('shifts/{shift}', [ManagerShiftController::class, 'update']);
+        Route::get('shifts/{shift}/deletion-preview', [ManagerShiftController::class, 'deletionPreview']);
         Route::delete('shifts/{shift}', [ManagerShiftController::class, 'destroy']);
         Route::post('shifts/publish', [ManagerShiftController::class, 'publish']);
+        Route::post('shifts/unpublish', [ManagerShiftController::class, 'unpublish']);
 
         Route::get('shift-assignments', [ManagerShiftAssignmentController::class, 'index']);
         Route::post('shift-assignments', [ManagerShiftAssignmentController::class, 'store']);

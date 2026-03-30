@@ -18,6 +18,8 @@ class EmployeeShift extends Model
         'employee_id',
         'date',
         'published',
+        'published_date',
+        'published_employee_id',
         'reminder_sent_at',
     ];
 
@@ -26,8 +28,20 @@ class EmployeeShift extends Model
         return [
             'date' => 'date',
             'published' => 'boolean',
+            'published_date' => 'date',
+            'published_employee_id' => 'integer',
             'reminder_sent_at' => 'datetime',
         ];
+    }
+
+    public function hasUnpublishedChanges(): bool
+    {
+        if (! $this->published || $this->published_date === null) {
+            return false;
+        }
+
+        return $this->date->toDateString() !== $this->published_date->toDateString()
+            || $this->employee_id !== $this->published_employee_id;
     }
 
     protected static function booted(): void
@@ -36,6 +50,7 @@ class EmployeeShift extends Model
             if (auth()->check()) {
                 $builder->whereHas('shift', function (Builder $query) {
                     $query->withoutGlobalScope('company')
+                        ->withTrashed()
                         ->where('company_id', auth()->user()->company_id);
                 });
             }
@@ -44,7 +59,7 @@ class EmployeeShift extends Model
 
     public function shift(): BelongsTo
     {
-        return $this->belongsTo(Shift::class);
+        return $this->belongsTo(Shift::class)->withTrashed();
     }
 
     public function employee(): BelongsTo

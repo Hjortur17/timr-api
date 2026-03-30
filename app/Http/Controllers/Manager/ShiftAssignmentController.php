@@ -66,17 +66,9 @@ class ShiftAssignmentController extends Controller
     {
         $this->authorize('update', $shiftAssignment);
 
-        $wasPublished = $shiftAssignment->published;
-
         $shiftAssignment->update($request->validated());
 
-        $shiftAssignment->load('shift', 'employee.notificationPreferences');
-
-        if ($wasPublished && $shiftAssignment->employee?->prefersNotification(NotificationType::ShiftChanged)) {
-            $shiftAssignment->employee->notify(
-                new ShiftChangedNotification($shiftAssignment, 'updated')
-            );
-        }
+        $shiftAssignment->load('shift', 'employee');
 
         return response()->json([
             'data' => new ShiftAssignmentResource($shiftAssignment),

@@ -5,7 +5,6 @@ use App\Models\Company;
 use App\Models\Employee;
 use App\Models\EmployeeShift;
 use App\Models\Shift;
-use App\Models\User;
 use App\Notifications\ShiftReminderNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Notification;
@@ -34,6 +33,7 @@ it('sends shift reminders for assignments starting in 24 hours', function () {
         'employee_id' => $employee->id,
         'date' => '2026-04-02',
         'published' => true,
+        'published_date' => '2026-04-02',
         'reminder_sent_at' => null,
     ]);
 
@@ -92,6 +92,7 @@ it('does not send reminder if already sent', function () {
         'employee_id' => $employee->id,
         'date' => '2026-04-02',
         'published' => true,
+        'published_date' => '2026-04-02',
         'reminder_sent_at' => now()->subHour(),
     ]);
 
@@ -126,6 +127,7 @@ it('does not send reminder when employee has disabled shift_reminder', function 
         'employee_id' => $employee->id,
         'date' => '2026-04-02',
         'published' => true,
+        'published_date' => '2026-04-02',
         'reminder_sent_at' => null,
     ]);
 
@@ -155,6 +157,7 @@ it('marks reminder_sent_at after sending', function () {
         'employee_id' => $employee->id,
         'date' => '2026-04-02',
         'published' => true,
+        'published_date' => '2026-04-02',
         'reminder_sent_at' => null,
     ]);
 

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class ShiftTemplate extends Model
 {
@@ -14,8 +14,11 @@ class ShiftTemplate extends Model
 
     protected $fillable = [
         'company_id',
+        'shift_id',
         'name',
         'description',
+        'pattern',
+        'blocks',
         'cycle_length_days',
     ];
 
@@ -23,6 +26,7 @@ class ShiftTemplate extends Model
     {
         return [
             'cycle_length_days' => 'integer',
+            'blocks' => 'array',
         ];
     }
 
@@ -40,8 +44,16 @@ class ShiftTemplate extends Model
         return $this->belongsTo(Company::class);
     }
 
-    public function entries(): HasMany
+    public function shift(): BelongsTo
     {
-        return $this->hasMany(ShiftTemplateEntry::class);
+        return $this->belongsTo(Shift::class)->withTrashed();
+    }
+
+    public function employees(): BelongsToMany
+    {
+        return $this->belongsToMany(Employee::class, 'shift_template_employee')
+            ->withPivot('sort_order')
+            ->orderByPivot('sort_order')
+            ->withTimestamps();
     }
 }

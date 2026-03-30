@@ -13,18 +13,18 @@ class SendShiftReminders extends Command
     protected $signature = 'shifts:send-reminders
                             {--hours=24 : Hours before shift start to send reminder}';
 
-    protected $description = "Send shift reminder notifications to employees ahead of their upcoming shifts.";
+    protected $description = 'Send shift reminder notifications to employees ahead of their upcoming shifts.';
 
     public function handle(): int
     {
-        $hours = (int) $this->option("hours");
+        $hours = (int) $this->option('hours');
         $target = Carbon::now()->addHours($hours);
 
         // Target date lives on employee_shift; target time lives on shifts.
         // Split them so each condition hits the right table.
         $targetDate = $target->toDateString();
-        $windowStartTime = $target->copy()->subMinutes(30)->format("H:i:s");
-        $windowEndTime = $target->copy()->addMinutes(30)->format("H:i:s");
+        $windowStartTime = $target->copy()->subMinutes(30)->format('H:i:s');
+        $windowEndTime = $target->copy()->addMinutes(30)->format('H:i:s');
 
         info(
             "Target date: $targetDate, window: $windowStartTime - $windowEndTime",
@@ -32,15 +32,15 @@ class SendShiftReminders extends Command
 
         // Find published assignments starting in the reminder window that haven't been reminded yet
         $assignments = EmployeeShift::query()
-            ->with(["shift", "employee.notificationPreferences"])
-            ->where("published", true)
-            ->whereNull("reminder_sent_at")
-            ->whereDate("date", $targetDate)
-            ->whereHas("shift", function ($query) use (
+            ->with(['shift', 'employee.notificationPreferences'])
+            ->where('published', true)
+            ->whereNull('reminder_sent_at')
+            ->whereDate('published_date', $targetDate)
+            ->whereHas('shift', function ($query) use (
                 $windowStartTime,
                 $windowEndTime,
             ) {
-                $query->whereBetween("start_time", [
+                $query->whereBetween('start_time', [
                     $windowStartTime,
                     $windowEndTime,
                 ]);
@@ -53,15 +53,15 @@ class SendShiftReminders extends Command
             $employee = $assignment->employee;
 
             if (
-                !$employee ||
-                !$employee->prefersNotification(NotificationType::ShiftReminder)
+                ! $employee ||
+                ! $employee->prefersNotification(NotificationType::ShiftReminder)
             ) {
                 continue;
             }
 
             $employee->notify(new ShiftReminderNotification($assignment));
 
-            $assignment->update(["reminder_sent_at" => now()]);
+            $assignment->update(['reminder_sent_at' => now()]);
 
             $sent++;
         }

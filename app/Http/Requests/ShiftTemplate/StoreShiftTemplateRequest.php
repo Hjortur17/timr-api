@@ -21,11 +21,12 @@ class StoreShiftTemplateRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'cycle_length_days' => ['required', 'integer', 'min:1', 'max:365'],
-            'entries' => ['nullable', 'array'],
-            'entries.*.shift_id' => ['required_with:entries', 'exists:shifts,id,company_id,'.$companyId],
-            'entries.*.employee_id' => ['nullable', 'exists:employees,id,company_id,'.$companyId],
-            'entries.*.day_offset' => ['required_with:entries', 'integer', 'min:0'],
+            'shift_id' => ['required', 'exists:shifts,id,company_id,'.$companyId],
+            'pattern' => ['required', 'string', 'in:2-2-3,5-5-4,5-2,4-3,custom'],
+            'blocks' => ['required', 'array', 'min:1'],
+            'blocks.*' => ['required', 'integer', 'min:1'],
+            'employee_ids' => ['required', 'array', 'min:1'],
+            'employee_ids.*' => ['required', 'exists:employees,id,company_id,'.$companyId],
         ];
     }
 
@@ -35,9 +36,8 @@ class StoreShiftTemplateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'entries.*.day_offset.min' => 'Day offset must be 0 or greater.',
-            'entries.*.shift_id.exists' => 'The selected shift does not belong to your company.',
-            'entries.*.employee_id.exists' => 'The selected employee does not belong to your company.',
+            'shift_id.exists' => 'The selected shift does not belong to your company.',
+            'employee_ids.*.exists' => 'The selected employee does not belong to your company.',
         ];
     }
 }

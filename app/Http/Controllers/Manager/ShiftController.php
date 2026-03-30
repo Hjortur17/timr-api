@@ -10,6 +10,7 @@ use App\Http\Resources\ShiftResource;
 use App\Models\Shift;
 use App\Services\ShiftService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ShiftController extends Controller
 {
@@ -50,11 +51,24 @@ class ShiftController extends Controller
         ]);
     }
 
-    public function destroy(Shift $shift): JsonResponse
+    public function deletionPreview(Shift $shift): JsonResponse
     {
         $this->authorize('delete', $shift);
 
-        $this->shiftService->delete($shift);
+        $preview = $this->shiftService->getDeletionPreview($shift);
+
+        return response()->json(['data' => $preview]);
+    }
+
+    public function destroy(Request $request, Shift $shift): JsonResponse
+    {
+        $this->authorize('delete', $shift);
+
+        $validated = $request->validate([
+            'replacement_shift_id' => ['nullable', 'integer', 'exists:shifts,id'],
+        ]);
+
+        $this->shiftService->delete($shift, $validated['replacement_shift_id'] ?? null);
 
         return response()->json([
             'message' => 'Shift deleted successfully.',
@@ -73,6 +87,23 @@ class ShiftController extends Controller
         return response()->json([
             'message' => 'Shifts published successfully.',
             'updated_count' => $updated,
+        ]);
+    }
+
+    public function unpublish(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', Shift::class);
+
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'exists:employee_shift,id'],
+        ]);
+
+        $reverted = $this->shiftService->unpublishAssignments($validated['ids']);
+
+        return response()->json([
+            'message' => 'Shifts unpublished successfully.',
+            'updated_count' => $reverted,
         ]);
     }
 }

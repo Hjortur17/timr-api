@@ -19,12 +19,18 @@ class EmployeeShiftFactory extends Factory
             'employee_id' => Employee::factory(),
             'date' => fake()->dateTimeBetween('+1 day', '+30 days')->format('Y-m-d'),
             'published' => false,
+            'published_date' => null,
+            'published_employee_id' => null,
             'reminder_sent_at' => null,
         ];
     }
 
     public function published(): static
     {
-        return $this->state(fn () => ['published' => true]);
+        return $this->state(fn (array $attributes) => [
+            'published' => true,
+            'published_date' => $attributes['date'],
+            'published_employee_id' => $attributes['employee_id'],
+        ]);
     }
 }

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Company;
+use App\Models\Shift;
 use App\Models\ShiftTemplate;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -15,9 +16,12 @@ class ShiftTemplateFactory extends Factory
     {
         return [
             'company_id' => Company::factory(),
-            'name' => fake()->randomElement(['2-2-3 Rotation', '5-5-4 Rotation', 'Standard Week', 'Weekend Only']),
+            'shift_id' => Shift::factory(),
+            'name' => fake()->randomElement(['2-2-3 Rotation', '5-2 Standard', '4-3 Rotation']),
             'description' => fake()->optional()->sentence(),
-            'cycle_length_days' => fake()->randomElement([7, 14, 28]),
+            'pattern' => '2-2-3',
+            'blocks' => [2, 2, 3],
+            'cycle_length_days' => 7,
         ];
     }
 
@@ -25,8 +29,9 @@ class ShiftTemplateFactory extends Factory
     {
         return $this->state(fn () => [
             'name' => '2-2-3 Rotation',
-            'description' => 'Work 2, off 2, work 3 — then inverse. Every other weekend off.',
-            'cycle_length_days' => 14,
+            'pattern' => '2-2-3',
+            'blocks' => [2, 2, 3],
+            'cycle_length_days' => 7,
         ]);
     }
 
@@ -34,16 +39,28 @@ class ShiftTemplateFactory extends Factory
     {
         return $this->state(fn () => [
             'name' => '5-5-4 Rotation',
-            'description' => '5 days on, 5 off, 4 on. Common in 12-hour continuous operations.',
+            'pattern' => '5-5-4',
+            'blocks' => [5, 5, 4],
             'cycle_length_days' => 14,
         ]);
     }
 
-    public function standardWeek(): static
+    public function fiveTwo(): static
     {
         return $this->state(fn () => [
-            'name' => 'Standard Week',
-            'description' => 'Monday to Friday fixed shifts.',
+            'name' => '5-2 Standard',
+            'pattern' => '5-2',
+            'blocks' => [5, 2],
+            'cycle_length_days' => 7,
+        ]);
+    }
+
+    public function fourThree(): static
+    {
+        return $this->state(fn () => [
+            'name' => '4-3 Rotation',
+            'pattern' => '4-3',
+            'blocks' => [4, 3],
             'cycle_length_days' => 7,
         ]);
     }

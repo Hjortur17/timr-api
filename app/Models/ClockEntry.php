@@ -36,6 +36,7 @@ class ClockEntry extends Model
             if (auth()->check()) {
                 $builder->whereHas('shift', function (Builder $query) {
                     $query->withoutGlobalScope('company')
+                        ->withTrashed()
                         ->where('company_id', auth()->user()->company_id);
                 });
             }
@@ -44,7 +45,7 @@ class ClockEntry extends Model
 
     public function shift(): BelongsTo
     {
-        return $this->belongsTo(Shift::class);
+        return $this->belongsTo(Shift::class)->withTrashed();
     }
 
     public function employee(): BelongsTo

@@ -8,6 +8,7 @@ use App\Models\EmployeeShift;
 use App\Models\Shift;
 use App\Notifications\ShiftPublishedNotification;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class ShiftService
 {
@@ -23,18 +24,18 @@ class ShiftService
     {
         $query = EmployeeShift::query()
             ->with('shift')
-            ->where('employee_id', $employee->id)
+            ->where('published_employee_id', $employee->id)
             ->where('published', true);
 
         if ($from) {
-            $query->where('date', '>=', $from);
+            $query->whereDate('published_date', '>=', $from);
         }
 
         if ($to) {
-            $query->where('date', '<=', $to);
+            $query->whereDate('published_date', '<=', $to);
         }
 
-        return $query->oldest('date')->get();
+        return $query->oldest('published_date')->get();
     }
 
     /**
@@ -71,23 +72,101 @@ class ShiftService
         return $shift->fresh('employees');
     }
 
-    public function delete(Shift $shift): void
+    /**
+     * @return array<string, mixed>
+     */
+    public function getDeletionPreview(Shift $shift): array
     {
-        $shift->delete();
+        $today = now()->toDateString();
+
+        $totalAssignments = $shift->assignments()->count();
+        $totalEmployees = $shift->assignments()->distinct('employee_id')->count('employee_id');
+        $futureAssignments = $shift->assignments()->where('date', '>=', $today)->count();
+        $futureEmployees = $shift->assignments()->where('date', '>=', $today)->distinct('employee_id')->count('employee_id');
+
+        $replacementShifts = Shift::query()
+            ->where('id', '!=', $shift->id)
+            ->select('id', 'title', 'start_time', 'end_time')
+            ->oldest('start_time')
+            ->get();
+
+        return [
+            'total_assignments' => $totalAssignments,
+            'total_employees' => $totalEmployees,
+            'future_assignments' => $futureAssignments,
+            'future_employees' => $futureEmployees,
+            'replacement_shifts' => $replacementShifts,
+        ];
     }
 
-    public function publishAssignmentsInRange(string $from, string $to): int
+    public function delete(Shift $shift, ?int $replacementShiftId = null): void
     {
-        $count = EmployeeShift::query()
-            ->whereBetween('date', [$from, $to])
-            ->update(['published' => true]);
+        DB::transaction(function () use ($shift, $replacementShiftId) {
+            $today = now()->toDateString();
+
+            if ($replacementShiftId) {
+                $futureAssignments = $shift->assignments()->where('date', '>=', $today)->get();
+
+                foreach ($futureAssignments as $assignment) {
+                    $duplicateExists = EmployeeShift::query()
+                        ->where('shift_id', $replacementShiftId)
+                        ->where('employee_id', $assignment->employee_id)
+                        ->where('date', $assignment->date)
+                        ->exists();
+
+                    if ($duplicateExists) {
+                        $assignment->delete();
+                    } else {
+                        $assignment->update(['shift_id' => $replacementShiftId]);
+                    }
+                }
+            } else {
+                $shift->assignments()->where('date', '>=', $today)->delete();
+            }
+
+            $shift->delete();
+        });
+    }
+
+    public function publishAssignmentsInRange(?string $from = null, ?string $to = null): int
+    {
+        $query = EmployeeShift::query()
+            ->where(function ($q) {
+                $q->where('published', false)
+                    ->orWhereColumn('date', '!=', 'published_date')
+                    ->orWhereColumn('employee_id', '!=', 'published_employee_id');
+            });
+
+        if ($from && $to) {
+            $query->whereBetween('date', [$from, $to]);
+        }
+
+        $assignments = $query->get();
+
+        if ($assignments->isEmpty()) {
+            return 0;
+        }
+
+        foreach ($assignments as $assignment) {
+            $assignment->update([
+                'published' => true,
+                'published_date' => $assignment->date,
+                'published_employee_id' => $assignment->employee_id,
+            ]);
+        }
+
+        $count = $assignments->count();
 
         // Dispatch one batched email per affected employee
-        $assignments = EmployeeShift::query()
+        $notificationQuery = EmployeeShift::query()
             ->with(['shift', 'employee.notificationPreferences'])
-            ->whereBetween('date', [$from, $to])
-            ->where('published', true)
-            ->get();
+            ->where('published', true);
+
+        if ($from && $to) {
+            $notificationQuery->whereBetween('date', [$from, $to]);
+        }
+
+        $assignments = $notificationQuery->get();
 
         $assignments
             ->groupBy('employee_id')
@@ -101,5 +180,19 @@ class ShiftService
             });
 
         return $count;
+    }
+
+    /**
+     * @param  array<int>  $ids
+     */
+    public function unpublishAssignments(array $ids): int
+    {
+        return EmployeeShift::query()
+            ->whereIn('id', $ids)
+            ->update([
+                'published' => false,
+                'published_date' => null,
+                'published_employee_id' => null,
+            ]);
     }
 }

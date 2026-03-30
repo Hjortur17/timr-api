@@ -5,8 +5,10 @@ use App\Models\Employee;
 use App\Models\EmployeeShift;
 use App\Models\Shift;
 use App\Models\User;
+use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
+    Notification::fake();
     $this->company = Company::factory()->create();
     $this->manager = User::factory()->create([
         'company_id' => $this->company->id,
@@ -86,20 +88,6 @@ it('allows a manager to update an assignment date', function () {
         ->assertJsonPath('data.date', '2026-03-11');
 });
 
-it('allows a manager to publish an assignment', function () {
-    $assignment = EmployeeShift::create([
-        'shift_id' => $this->shift->id,
-        'employee_id' => $this->employee->id,
-        'date' => '2026-03-10',
-        'published' => false,
-    ]);
-
-    $this->putJson("/api/manager/shift-assignments/{$assignment->id}", [
-        'published' => true,
-    ])->assertOk()
-        ->assertJsonPath('data.published', true);
-});
-
 it('allows a manager to delete an assignment', function () {
     $assignment = EmployeeShift::create([
         'shift_id' => $this->shift->id,
@@ -129,4 +117,47 @@ it('prevents a manager from accessing another companys assignments', function ()
     $this->putJson("/api/manager/shift-assignments/{$assignment->id}", [
         'date' => '2026-03-11',
     ])->assertNotFound();
+});
+
+it('moving a published assignment only updates draft columns', function () {
+    $assignment = EmployeeShift::create([
+        'shift_id' => $this->shift->id,
+        'employee_id' => $this->employee->id,
+        'date' => '2026-04-06',
+        'published' => false,
+    ]);
+
+    $this->postJson('/api/manager/shifts/publish', [
+        'from' => '2026-04-01',
+        'to' => '2026-04-12',
+    ])->assertOk();
+
+    $this->putJson("/api/manager/shift-assignments/{$assignment->id}", [
+        'date' => '2026-04-07',
+    ])->assertOk()
+        ->assertJsonPath('data.date', '2026-04-07')
+        ->assertJsonPath('data.published_date', '2026-04-06')
+        ->assertJsonPath('data.has_unpublished_changes', true);
+});
+
+it('moving a published assignment to a different employee preserves published_employee_id', function () {
+    $employeeB = Employee::create(['company_id' => $this->company->id, 'name' => 'Employee B']);
+
+    $assignment = EmployeeShift::create([
+        'shift_id' => $this->shift->id,
+        'employee_id' => $this->employee->id,
+        'date' => '2026-04-06',
+        'published' => false,
+    ]);
+
+    $this->postJson('/api/manager/shifts/publish', [
+        'from' => '2026-04-01',
+        'to' => '2026-04-12',
+    ])->assertOk();
+
+    $this->putJson("/api/manager/shift-assignments/{$assignment->id}", [
+        'employee_id' => $employeeB->id,
+    ])->assertOk()
+        ->assertJsonPath('data.employee_id', $employeeB->id)
+        ->assertJsonPath('data.published_employee_id', $this->employee->id);
 });

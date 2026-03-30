@@ -104,24 +104,21 @@ it('does not send a notification when employee has disabled shift_published', fu
 
 // ── Change notifications ─────────────────────────────────────────────
 
-it('sends ShiftChangedNotification when a published assignment is updated', function () {
+it('does not send ShiftChangedNotification when a published assignment is moved', function () {
     $shift = Shift::factory()->create(['company_id' => $this->company->id]);
     $employee = Employee::factory()->create(['company_id' => $this->company->id, 'is_active' => true]);
 
-    $assignment = EmployeeShift::factory()->create([
+    $assignment = EmployeeShift::factory()->published()->create([
         'shift_id' => $shift->id,
         'employee_id' => $employee->id,
         'date' => '2026-04-01',
-        'published' => true,
     ]);
 
     $this->putJson("/api/manager/shift-assignments/{$assignment->id}", [
         'date' => '2026-04-02',
     ])->assertOk();
 
-    Notification::assertSentTo($employee, ShiftChangedNotification::class, function ($notification) {
-        return $notification->changeType === 'updated';
-    });
+    Notification::assertNothingSent();
 });
 
 it('does not send ShiftChangedNotification when an unpublished assignment is updated', function () {
@@ -146,11 +143,10 @@ it('sends ShiftChangedNotification when a published assignment is deleted', func
     $shift = Shift::factory()->create(['company_id' => $this->company->id]);
     $employee = Employee::factory()->create(['company_id' => $this->company->id, 'is_active' => true]);
 
-    $assignment = EmployeeShift::factory()->create([
+    $assignment = EmployeeShift::factory()->published()->create([
         'shift_id' => $shift->id,
         'employee_id' => $employee->id,
         'date' => '2026-04-01',
-        'published' => true,
     ]);
 
     $this->deleteJson("/api/manager/shift-assignments/{$assignment->id}")
@@ -170,11 +166,10 @@ it('does not send ShiftChangedNotification when employee has disabled shift_chan
         'enabled' => false,
     ]);
 
-    $assignment = EmployeeShift::factory()->create([
+    $assignment = EmployeeShift::factory()->published()->create([
         'shift_id' => $shift->id,
         'employee_id' => $employee->id,
         'date' => '2026-04-01',
-        'published' => true,
     ]);
 
     $this->deleteJson("/api/manager/shift-assignments/{$assignment->id}")->assertOk();

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\Employee;
 use App\Models\EmployeeShift;
 use App\Models\ShiftTemplate;
 use Carbon\Carbon;
@@ -13,7 +12,7 @@ class ShiftTemplateService
     public function listForCompany(): Collection
     {
         return ShiftTemplate::query()
-            ->with(['entries.shift', 'entries.employee'])
+            ->with(['shift', 'employees'])
             ->latest()
             ->get();
     }
@@ -23,16 +22,16 @@ class ShiftTemplateService
      */
     public function create(array $data): ShiftTemplate
     {
-        $entries = $data['entries'] ?? [];
-        unset($data['entries']);
+        $employeeIds = $data['employee_ids'] ?? [];
+        unset($data['employee_ids']);
+
+        $data['cycle_length_days'] = array_sum($data['blocks']);
 
         $template = ShiftTemplate::create($data);
 
-        foreach ($entries as $entry) {
-            $template->entries()->create($entry);
-        }
+        $this->syncEmployees($template, $employeeIds);
 
-        return $template->load(['entries.shift', 'entries.employee']);
+        return $template->load(['shift', 'employees']);
     }
 
     /**
@@ -40,20 +39,20 @@ class ShiftTemplateService
      */
     public function update(ShiftTemplate $template, array $data): ShiftTemplate
     {
-        $entries = $data['entries'] ?? null;
-        unset($data['entries']);
+        $employeeIds = $data['employee_ids'] ?? null;
+        unset($data['employee_ids']);
+
+        if (isset($data['blocks'])) {
+            $data['cycle_length_days'] = array_sum($data['blocks']);
+        }
 
         $template->update($data);
 
-        if ($entries !== null) {
-            $template->entries()->delete();
-
-            foreach ($entries as $entry) {
-                $template->entries()->create($entry);
-            }
+        if ($employeeIds !== null) {
+            $this->syncEmployees($template, $employeeIds);
         }
 
-        return $template->fresh(['entries.shift', 'entries.employee']);
+        return $template->fresh(['shift', 'employees']);
     }
 
     public function delete(ShiftTemplate $template): void
@@ -64,74 +63,92 @@ class ShiftTemplateService
     /**
      * Generate shift assignments from a template for a date range.
      *
-     * The algorithm walks each day in the range, computes its position
-     * within the template cycle (day_offset), and creates unpublished
-     * EmployeeShift records for every matching entry.
+     * The algorithm distributes work blocks among employees in rotation.
+     * For blocks [2, 2, 3] with employees [A, B]:
+     *   Cycle 0: A(2 days), B(2 days), A(3 days)
+     *   Cycle 1: B(2 days), A(2 days), B(3 days)
      *
-     * If an entry has no employee_id, it assigns the shift to ALL
-     * employees in the company. If employee_id is set, it assigns
-     * only to that specific employee.
-     *
-     * Duplicate assignments (same shift + employee + date) are skipped.
+     * Formula: employee_index = (cycle_index * num_blocks + block_index) % num_employees
      *
      * @return int Number of assignments created
      */
     public function generateSchedule(ShiftTemplate $template, string $startDate, string $endDate): int
     {
-        $template->load(['entries.shift', 'entries.employee']);
+        $template->load(['shift', 'employees']);
 
         $start = Carbon::parse($startDate);
         $end = Carbon::parse($endDate);
+        $blocks = $template->blocks;
         $cycleLength = $template->cycle_length_days;
+        $employees = $template->employees->values();
+        $numEmployees = $employees->count();
+        $numBlocks = count($blocks);
+        $shiftId = $template->shift_id;
 
-        // Group entries by day_offset for efficient lookup
-        $entriesByOffset = $template->entries->groupBy('day_offset');
-
-        // If any entries have no employee_id, we need all company employees
-        $needAllEmployees = $template->entries->contains(fn ($entry) => $entry->employee_id === null);
-        $allEmployees = $needAllEmployees
-            ? Employee::query()->where('is_active', true)->get()
-            : new Collection;
+        if ($numEmployees === 0 || $numBlocks === 0) {
+            return 0;
+        }
 
         $created = 0;
         $current = $start->copy();
 
         while ($current->lte($end)) {
-            $dayInCycle = $start->diffInDays($current) % $cycleLength;
-            $dayEntries = $entriesByOffset->get($dayInCycle, collect());
+            $daysSinceStart = $start->diffInDays($current);
+            $cycleIndex = intdiv($daysSinceStart, $cycleLength);
+            $dayInCycle = $daysSinceStart % $cycleLength;
 
-            foreach ($dayEntries as $entry) {
-                $employees = $entry->employee_id
-                    ? collect([$entry->employee])
-                    : $allEmployees;
+            // Determine which block this day falls in
+            $cumulativeDays = 0;
+            $blockIndex = 0;
 
-                foreach ($employees as $employee) {
-                    if (! $employee) {
-                        continue;
-                    }
-
-                    // Skip if this assignment already exists
-                    $exists = EmployeeShift::query()
-                        ->where('shift_id', $entry->shift_id)
-                        ->where('employee_id', $employee->id)
-                        ->whereDate('date', $current->toDateString())
-                        ->exists();
-
-                    if (! $exists) {
-                        EmployeeShift::create([
-                            'shift_id' => $entry->shift_id,
-                            'employee_id' => $employee->id,
-                            'date' => $current->toDateString(),
-                            'published' => false,
-                        ]);
-                        $created++;
-                    }
+            foreach ($blocks as $i => $blockSize) {
+                if ($dayInCycle < $cumulativeDays + $blockSize) {
+                    $blockIndex = $i;
+                    break;
                 }
+                $cumulativeDays += $blockSize;
+            }
+
+            // Round-robin employee assignment
+            $employeeIndex = ($cycleIndex * $numBlocks + $blockIndex) % $numEmployees;
+            $employee = $employees[$employeeIndex];
+
+            // Skip if this assignment already exists
+            $exists = EmployeeShift::query()
+                ->where('shift_id', $shiftId)
+                ->where('employee_id', $employee->id)
+                ->whereDate('date', $current->toDateString())
+                ->exists();
+
+            if (! $exists) {
+                EmployeeShift::create([
+                    'shift_id' => $shiftId,
+                    'employee_id' => $employee->id,
+                    'date' => $current->toDateString(),
+                    'published' => false,
+                ]);
+                $created++;
             }
 
             $current->addDay();
         }
 
         return $created;
+    }
+
+    /**
+     * Sync employees to the template pivot with sort_order preserved.
+     *
+     * @param  array<int, int>  $employeeIds
+     */
+    private function syncEmployees(ShiftTemplate $template, array $employeeIds): void
+    {
+        $syncData = [];
+
+        foreach ($employeeIds as $index => $employeeId) {
+            $syncData[$employeeId] = ['sort_order' => $index];
+        }
+
+        $template->employees()->sync($syncData);
     }
 }
