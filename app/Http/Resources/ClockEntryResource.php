@@ -27,9 +27,9 @@ class ClockEntryResource extends JsonResource
         ];
 
         if ($this->clocked_in_at && $this->clocked_out_at) {
-            $data['total_hours'] = round($this->clocked_in_at->diffInMinutes($this->clocked_out_at) / 60, 2);
+            $data['total_minutes'] = $this->clocked_in_at->diffInMinutes($this->clocked_out_at);
         } else {
-            $data['total_hours'] = null;
+            $data['total_minutes'] = null;
         }
 
         if ($this->relationLoaded('employee')) {

@@ -79,7 +79,7 @@ it('includes employee and shift data in clock entry response', function () {
                     'id',
                     'clocked_in_at',
                     'clocked_out_at',
-                    'total_hours',
+                    'total_minutes',
                     'employee' => ['id', 'name', 'email'],
                     'shift' => ['id', 'title'],
                 ],
@@ -108,12 +108,44 @@ it('returns clock entry summary grouped by employee', function () {
             'data' => [
                 [
                     'employee' => ['id', 'name', 'email'],
-                    'total_hours',
+                    'total_minutes',
                     'entry_count',
                     'last_clocked_in_at',
                 ],
             ],
         ]);
+});
+
+it('returns total_minutes as integer in clock entry list', function () {
+    ClockEntry::factory()->create([
+        'shift_id' => $this->shift->id,
+        'employee_id' => $this->employee->id,
+        'clocked_in_at' => '2026-03-15 08:00:00',
+        'clocked_out_at' => '2026-03-15 09:53:00',
+    ]);
+
+    $this->getJson('/api/manager/clock-entries')
+        ->assertOk()
+        ->assertJsonPath('data.0.total_minutes', 113);
+});
+
+it('returns total_minutes as integer in summary', function () {
+    ClockEntry::factory()->create([
+        'shift_id' => $this->shift->id,
+        'employee_id' => $this->employee->id,
+        'clocked_in_at' => '2026-03-15 08:00:00',
+        'clocked_out_at' => '2026-03-15 16:00:00',
+    ]);
+    ClockEntry::factory()->create([
+        'shift_id' => $this->shift->id,
+        'employee_id' => $this->employee->id,
+        'clocked_in_at' => '2026-03-16 08:00:00',
+        'clocked_out_at' => '2026-03-16 12:00:00',
+    ]);
+
+    $this->getJson('/api/manager/clock-entries/summary')
+        ->assertOk()
+        ->assertJsonPath('data.0.total_minutes', 720);
 });
 
 it('does not list clock entries from another company', function () {

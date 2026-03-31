@@ -67,7 +67,7 @@ it('filters employee clock entries by date range', function () {
         ->assertJsonCount(1, 'data');
 });
 
-it('includes total_hours and shift data in response', function () {
+it('includes total_minutes and shift data in response', function () {
     ClockEntry::factory()->clockedOut()->create([
         'shift_id' => $this->shift->id,
         'employee_id' => $this->employee->id,
@@ -81,7 +81,7 @@ it('includes total_hours and shift data in response', function () {
                     'id',
                     'clocked_in_at',
                     'clocked_out_at',
-                    'total_hours',
+                    'total_minutes',
                     'shift' => ['id', 'title'],
                 ],
             ],

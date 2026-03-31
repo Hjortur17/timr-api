@@ -54,8 +54,8 @@ class ClockEntryController extends Controller
 
         $data = $grouped->map(function ($employeeEntries) {
             $employee = $employeeEntries->first()->employee;
-            $totalSeconds = $employeeEntries->sum(
-                fn ($entry) => $entry->clocked_in_at->diffInSeconds($entry->clocked_out_at ?? now())
+            $totalMinutes = $employeeEntries->sum(
+                fn ($entry) => $entry->clocked_in_at->diffInMinutes($entry->clocked_out_at ?? now())
             );
 
             return [
@@ -64,7 +64,7 @@ class ClockEntryController extends Controller
                     'name' => $employee->name,
                     'email' => $employee->email,
                 ],
-                'total_hours' => round($totalSeconds / 3600, 2),
+                'total_minutes' => $totalMinutes,
                 'entry_count' => $employeeEntries->count(),
                 'last_clocked_in_at' => $employeeEntries->max('clocked_in_at'),
             ];
