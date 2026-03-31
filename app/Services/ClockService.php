@@ -15,17 +15,23 @@ class ClockService
     /**
      * @throws ValidationException
      */
-    public function clockIn(Employee $employee, Shift $shift, float $latitude, float $longitude): ClockEntry
+    public function clockIn(Employee $employee, ?Shift $shift, float $latitude, float $longitude): ClockEntry
     {
-        $existingEntry = ClockEntry::query()
-            ->where('shift_id', $shift->id)
+        $existingQuery = ClockEntry::query()
             ->where('employee_id', $employee->id)
-            ->whereNull('clocked_out_at')
-            ->first();
+            ->whereNull('clocked_out_at');
 
-        if ($existingEntry) {
+        if ($shift) {
+            $existingQuery->where('shift_id', $shift->id);
+        } else {
+            $existingQuery->whereNull('shift_id');
+        }
+
+        if ($existingQuery->exists()) {
             throw ValidationException::withMessages([
-                'shift_id' => 'You are already clocked in for this shift.',
+                'shift_id' => $shift
+                    ? 'You are already clocked in for this shift.'
+                    : 'You are already clocked in.',
             ]);
         }
 
@@ -39,7 +45,7 @@ class ClockService
         }
 
         return ClockEntry::create([
-            'shift_id' => $shift->id,
+            'shift_id' => $shift?->id,
             'employee_id' => $employee->id,
             'clocked_in_at' => now(),
             'clock_in_lat' => $latitude,

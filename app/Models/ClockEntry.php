@@ -34,10 +34,16 @@ class ClockEntry extends Model
     {
         static::addGlobalScope('company', function (Builder $builder) {
             if (auth()->check()) {
-                $builder->whereHas('shift', function (Builder $query) {
-                    $query->withoutGlobalScope('company')
-                        ->withTrashed()
-                        ->where('company_id', auth()->user()->company_id);
+                $companyId = auth()->user()->company_id;
+                $builder->where(function (Builder $query) use ($companyId) {
+                    $query->whereHas('shift', function (Builder $q) use ($companyId) {
+                        $q->withoutGlobalScope('company')
+                            ->withTrashed()
+                            ->where('company_id', $companyId);
+                    })->orWhereHas('employee', function (Builder $q) use ($companyId) {
+                        $q->withoutGlobalScope('company')
+                            ->where('company_id', $companyId);
+                    });
                 });
             }
         });

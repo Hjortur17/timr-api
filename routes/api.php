@@ -10,7 +10,9 @@ use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\Employee\ClockController;
 use App\Http\Controllers\Employee\NotificationPreferenceController;
 use App\Http\Controllers\Employee\ShiftController as EmployeeShiftController;
+use App\Http\Controllers\Manager\ClockEntryController as ManagerClockEntryController;
 use App\Http\Controllers\Manager\EmployeeController;
+use App\Http\Controllers\Manager\ExportController;
 use App\Http\Controllers\Manager\LocationController;
 use App\Http\Controllers\Manager\ShiftAssignmentController as ManagerShiftAssignmentController;
 use App\Http\Controllers\Manager\ShiftController as ManagerShiftController;
@@ -53,6 +55,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('shift-assignments/{shiftAssignment}', [ManagerShiftAssignmentController::class, 'update']);
         Route::delete('shift-assignments/{shiftAssignment}', [ManagerShiftAssignmentController::class, 'destroy']);
 
+        Route::get('clock-entries', [ManagerClockEntryController::class, 'index']);
+        Route::get('clock-entries/summary', [ManagerClockEntryController::class, 'summary']);
+        Route::get('clock-entries/export', [ExportController::class, 'clockEntries']);
+
         Route::get('locations', [LocationController::class, 'index']);
         Route::post('locations', [LocationController::class, 'store']);
 
@@ -65,6 +71,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('employee')->middleware('employee')->group(function () {
         Route::get('shifts', [EmployeeShiftController::class, 'index']);
+        Route::get('clock-entries', [ClockController::class, 'index']);
         Route::post('clock-in', [ClockController::class, 'clockIn']);
         Route::post('clock-out', [ClockController::class, 'clockOut']);
         Route::get('notification-preferences', [NotificationPreferenceController::class, 'index']);

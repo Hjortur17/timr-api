@@ -117,3 +117,50 @@ it('prevents double clock in for the same shift', function () {
         'longitude' => -21.8955,
     ])->assertUnprocessable();
 });
+
+it('allows an employee to clock in without a shift (extra)', function () {
+    $this->postJson('/api/employee/clock-in', [
+        'latitude' => 64.1356,
+        'longitude' => -21.8955,
+    ])->assertCreated();
+
+    $entry = ClockEntry::withoutGlobalScope('company')->first();
+    expect($entry->shift_id)->toBeNull();
+    expect($entry->employee_id)->toBe($this->employee->id);
+});
+
+it('marks extra clock entry with is_extra in response', function () {
+    $this->postJson('/api/employee/clock-in', [
+        'latitude' => 64.1356,
+        'longitude' => -21.8955,
+    ])->assertCreated()
+        ->assertJsonPath('data.is_extra', true)
+        ->assertJsonPath('data.shift_id', null);
+});
+
+it('prevents double extra clock in', function () {
+    ClockEntry::create([
+        'shift_id' => null,
+        'employee_id' => $this->employee->id,
+        'clocked_in_at' => now(),
+    ]);
+
+    $this->postJson('/api/employee/clock-in', [
+        'latitude' => 64.1356,
+        'longitude' => -21.8955,
+    ])->assertUnprocessable();
+});
+
+it('allows clock out from extra clock entry', function () {
+    ClockEntry::create([
+        'shift_id' => null,
+        'employee_id' => $this->employee->id,
+        'clocked_in_at' => now(),
+    ]);
+
+    $this->postJson('/api/employee/clock-out')
+        ->assertOk();
+
+    $entry = ClockEntry::withoutGlobalScope('company')->first();
+    expect($entry->clocked_out_at)->not->toBeNull();
+});

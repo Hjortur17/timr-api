@@ -8,7 +8,7 @@ use App\Models\User;
 
 class ClockEntryPolicy
 {
-    public function clockIn(User $user, Shift $shift): bool
+    public function clockIn(User $user, ?Shift $shift = null): bool
     {
         $employee = Employee::query()
             ->withoutGlobalScope('company')
@@ -17,6 +17,10 @@ class ClockEntryPolicy
 
         if (! $employee) {
             return false;
+        }
+
+        if (! $shift) {
+            return true;
         }
 
         return $employee->company_id === $shift->company_id
