@@ -90,3 +90,33 @@ it('allows a manager to send an invite to an employee', function () {
         return $mail->employee->id === $employee->id;
     });
 });
+
+it('allows creating an employee with ssn', function () {
+    $this->postJson('/api/manager/employees', [
+        'name' => 'Jón Jónsson',
+        'ssn' => '1234567890',
+    ])->assertCreated()
+        ->assertJsonPath('data.ssn', '1234567890');
+
+    expect(Employee::first()->ssn)->toBe('1234567890');
+});
+
+it('allows creating an employee without ssn', function () {
+    $this->postJson('/api/manager/employees', [
+        'name' => 'Guðrún',
+    ])->assertCreated()
+        ->assertJsonPath('data.ssn', null);
+});
+
+it('allows updating employee ssn', function () {
+    $employee = Employee::create([
+        'company_id' => $this->company->id,
+        'name' => 'Test',
+    ]);
+
+    $this->putJson("/api/manager/employees/{$employee->id}", [
+        'name' => 'Test',
+        'ssn' => '0987654321',
+    ])->assertOk()
+        ->assertJsonPath('data.ssn', '0987654321');
+});

@@ -15,6 +15,7 @@ class EmployeeResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'ssn' => $this->ssn,
             'name' => $this->name,
             'email' => $this->email,
             'phone' => $this->phone,
