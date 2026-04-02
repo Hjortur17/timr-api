@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Auth\CreateCompanyController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\SocialAccountController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Auth\UpdateOnboardingController;
@@ -26,6 +28,8 @@ Route::get('calendar/{token}', [CalendarController::class, 'show']);
 Route::prefix('auth')->group(function () {
     Route::post('register', RegisterController::class);
     Route::post('login', [LoginController::class, 'login']);
+    Route::post('forgot-password', ForgotPasswordController::class);
+    Route::post('reset-password', ResetPasswordController::class);
     Route::post('logout', [LoginController::class, 'logout'])->middleware('auth:sanctum');
     Route::get('user', UserController::class)->middleware('auth:sanctum');
     Route::post('company', CreateCompanyController::class)->middleware('auth:sanctum');

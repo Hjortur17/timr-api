@@ -17,6 +17,7 @@ class LoginController extends Controller
         $validated = $request->validate([
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
+            'remember' => ['sometimes', 'boolean'],
         ]);
 
         $user = User::withoutGlobalScope('company')
@@ -29,7 +30,8 @@ class LoginController extends Controller
             ]);
         }
 
-        $token = $user->createToken('auth-token')->plainTextToken;
+        $expiresAt = empty($validated['remember']) ? now()->addDay() : null;
+        $token = $user->createToken('auth-token', ['*'], $expiresAt)->plainTextToken;
 
         return response()->json([
             'data' => new UserResource($user),

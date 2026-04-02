@@ -36,6 +36,46 @@ it('fails login with missing fields', function () {
         ->assertJsonValidationErrors(['email', 'password']);
 });
 
+it('creates token without expiry when remember is true', function () {
+    $response = $this->postJson('/api/auth/login', [
+        'email' => $this->user->email,
+        'password' => 'password123',
+        'remember' => true,
+    ]);
+
+    $response->assertOk();
+
+    $token = $this->user->tokens()->latest()->first();
+    expect($token->expires_at)->toBeNull();
+});
+
+it('creates token with 24h expiry when remember is false', function () {
+    $response = $this->postJson('/api/auth/login', [
+        'email' => $this->user->email,
+        'password' => 'password123',
+        'remember' => false,
+    ]);
+
+    $response->assertOk();
+
+    $token = $this->user->tokens()->latest()->first();
+    expect($token->expires_at)->not->toBeNull();
+    expect($token->expires_at->diffInHours(now(), true))->toBeBetween(23, 25);
+});
+
+it('creates token with 24h expiry when remember is omitted', function () {
+    $response = $this->postJson('/api/auth/login', [
+        'email' => $this->user->email,
+        'password' => 'password123',
+    ]);
+
+    $response->assertOk();
+
+    $token = $this->user->tokens()->latest()->first();
+    expect($token->expires_at)->not->toBeNull();
+    expect($token->expires_at->diffInHours(now(), true))->toBeBetween(23, 25);
+});
+
 it('logs out an authenticated user', function () {
     $this->actingAs($this->user);
 

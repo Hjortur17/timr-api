@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CompanyRole;
+use App\Notifications\ResetPasswordNotification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -104,5 +105,10 @@ class User extends Authenticatable
     public function isManager(?int $companyId = null): bool
     {
         return $this->hasCompanyRole(CompanyRole::managerRoles(), $companyId);
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 }
