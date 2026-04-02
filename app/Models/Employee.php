@@ -24,6 +24,7 @@ class Employee extends Model
         'phone',
         'invite_token',
         'invite_sent_at',
+        'calendar_token',
         'is_active',
     ];
 

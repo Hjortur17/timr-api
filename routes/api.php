@@ -7,6 +7,8 @@ use App\Http\Controllers\Auth\SocialAccountController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Auth\UpdateOnboardingController;
 use App\Http\Controllers\Auth\UserController;
+use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\Employee\CalendarSubscribeController;
 use App\Http\Controllers\Employee\ClockController;
 use App\Http\Controllers\Employee\NotificationPreferenceController;
 use App\Http\Controllers\Employee\ShiftController as EmployeeShiftController;
@@ -18,6 +20,8 @@ use App\Http\Controllers\Manager\ShiftAssignmentController as ManagerShiftAssign
 use App\Http\Controllers\Manager\ShiftController as ManagerShiftController;
 use App\Http\Controllers\Manager\ShiftTemplateController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('calendar/{token}', [CalendarController::class, 'show']);
 
 Route::prefix('auth')->group(function () {
     Route::post('register', RegisterController::class);
@@ -70,7 +74,9 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('employee')->middleware('employee')->group(function () {
+        Route::get('shifts/ical', [EmployeeShiftController::class, 'ical']);
         Route::get('shifts', [EmployeeShiftController::class, 'index']);
+        Route::post('calendar-subscribe', CalendarSubscribeController::class);
         Route::get('clock-entries', [ClockController::class, 'index']);
         Route::post('clock-in', [ClockController::class, 'clockIn']);
         Route::post('clock-out', [ClockController::class, 'clockOut']);

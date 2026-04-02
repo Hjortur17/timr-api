@@ -182,6 +182,46 @@ class ShiftService
         return $count;
     }
 
+    public function renderIcal(Collection $assignments): string
+    {
+        $lines = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//Timr//Vaktir//IS',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH',
+            'X-WR-CALNAME:Vaktir',
+        ];
+
+        $now = now()->utc()->format('Ymd\THis\Z');
+
+        foreach ($assignments as $assignment) {
+            $shift = $assignment->shift;
+            $startTime = str_replace(':', '', substr($shift->start_time, 0, 5)).'00';
+            $endTime = str_replace(':', '', substr($shift->end_time, 0, 5)).'00';
+            $dateFormatted = $assignment->published_date->format('Ymd');
+
+            $uid = "timr-assignment-{$assignment->id}@timr.is";
+
+            $lines[] = 'BEGIN:VEVENT';
+            $lines[] = "UID:{$uid}";
+            $lines[] = "DTSTAMP:{$now}";
+            $lines[] = "DTSTART:{$dateFormatted}T{$startTime}";
+            $lines[] = "DTEND:{$dateFormatted}T{$endTime}";
+            $lines[] = "SUMMARY:{$shift->title}";
+
+            if ($shift->notes) {
+                $lines[] = "DESCRIPTION:{$shift->notes}";
+            }
+
+            $lines[] = 'END:VEVENT';
+        }
+
+        $lines[] = 'END:VCALENDAR';
+
+        return implode("\r\n", $lines)."\r\n";
+    }
+
     /**
      * @param  array<int>  $ids
      */
