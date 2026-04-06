@@ -1,0 +1,16 @@
+{
+  "formatter": "language_server",
+  "tab_size": 4,
+  "format_on_save": "on",
+  "languages": {
+    "PHP": {
+      "tab_size": 4,
+      "formatter": {
+        "external": {
+          "command": "vendor/bin/pint",
+          "arguments": ["{buffer_path}"]
+        }
+      }
+    }
+  }
+}
