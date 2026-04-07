@@ -66,6 +66,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('clock-entries', [ManagerClockEntryController::class, 'index']);
         Route::get('clock-entries/summary', [ManagerClockEntryController::class, 'summary']);
         Route::get('clock-entries/export', [ExportController::class, 'clockEntries']);
+        Route::post('clock-entries', [ManagerClockEntryController::class, 'store']);
+        Route::put('clock-entries/{clockEntry}', [ManagerClockEntryController::class, 'update']);
+        Route::delete('clock-entries/{clockEntry}', [ManagerClockEntryController::class, 'destroy']);
 
         Route::get('locations', [LocationController::class, 'index']);
         Route::post('locations', [LocationController::class, 'store']);

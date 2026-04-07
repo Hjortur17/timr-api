@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ClockEntry\ClockEntryIndexRequest;
+use App\Http\Requests\ClockEntry\StoreClockEntryRequest;
+use App\Http\Requests\ClockEntry\UpdateClockEntryRequest;
 use App\Http\Resources\ClockEntryResource;
 use App\Models\ClockEntry;
 use Illuminate\Http\JsonResponse;
@@ -73,6 +75,35 @@ class ClockEntryController extends Controller
         return response()->json([
             'data' => $data,
             'message' => 'Success',
+        ]);
+    }
+
+    public function store(StoreClockEntryRequest $request): JsonResponse
+    {
+        $entry = ClockEntry::create($request->validated());
+
+        return response()->json([
+            'data' => new ClockEntryResource($entry->load(['employee', 'shift'])),
+            'message' => 'Clock entry created.',
+        ], 201);
+    }
+
+    public function update(UpdateClockEntryRequest $request, ClockEntry $clockEntry): JsonResponse
+    {
+        $clockEntry->update($request->validated());
+
+        return response()->json([
+            'data' => new ClockEntryResource($clockEntry->load(['employee', 'shift'])),
+            'message' => 'Clock entry updated.',
+        ]);
+    }
+
+    public function destroy(ClockEntry $clockEntry): JsonResponse
+    {
+        $clockEntry->delete();
+
+        return response()->json([
+            'message' => 'Clock entry deleted.',
         ]);
     }
 }
