@@ -80,10 +80,10 @@ class ShiftAssignmentController extends Controller
     {
         $this->authorize('delete', $shiftAssignment);
 
-        $shiftAssignment->load('shift', 'employee.notificationPreferences');
+        $shiftAssignment->load('shift', 'employee.user.notificationPreferences');
 
         $shouldNotify = $shiftAssignment->published
-            && $shiftAssignment->employee?->prefersNotification(NotificationType::ShiftChanged);
+            && $shiftAssignment->employee?->prefersNotification(NotificationType::ScheduleChangeAlert);
 
         $shiftAssignment->delete();
 

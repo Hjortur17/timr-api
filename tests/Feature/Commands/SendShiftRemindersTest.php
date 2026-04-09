@@ -4,7 +4,9 @@ use App\Console\Commands\SendShiftReminders;
 use App\Models\Company;
 use App\Models\Employee;
 use App\Models\EmployeeShift;
+use App\Models\NotificationPreference;
 use App\Models\Shift;
+use App\Models\User;
 use App\Notifications\ShiftReminderNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Notification;
@@ -103,21 +105,26 @@ it('does not send reminder if already sent', function () {
     Carbon::setTestNow();
 });
 
-it('does not send reminder when employee has disabled shift_reminder', function () {
+it('does not send reminder when employee has disabled shift_start_reminder', function () {
     $company = Company::factory()->create();
     $shift = Shift::factory()->create([
         'company_id' => $company->id,
         'start_time' => '09:00',
         'end_time' => '17:00',
     ]);
+    $user = User::factory()->create(['company_id' => $company->id]);
     $employee = Employee::factory()->create([
         'company_id' => $company->id,
+        'user_id' => $user->id,
         'is_active' => true,
     ]);
 
-    $employee->notificationPreferences()->create([
-        'type' => 'shift_reminder',
-        'enabled' => false,
+    NotificationPreference::create([
+        'user_id' => $user->id,
+        'notification_type' => 'shift_start_reminder',
+        'channel_push' => false,
+        'channel_email' => false,
+        'channel_in_app' => false,
     ]);
 
     Carbon::setTestNow('2026-04-01 09:00:00');

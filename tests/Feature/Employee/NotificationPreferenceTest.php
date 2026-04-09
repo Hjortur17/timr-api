@@ -1,8 +1,8 @@
 <?php
 
-use App\Enums\NotificationType;
 use App\Models\Company;
 use App\Models\Employee;
+use App\Models\NotificationPreference;
 use App\Models\User;
 
 beforeEach(function () {
@@ -15,7 +15,7 @@ beforeEach(function () {
     $this->actingAs($this->user);
 });
 
-it('returns all notification types with default enabled state', function () {
+it('returns all employee notification types with default enabled state', function () {
     $response = $this->getJson('/api/employee/notification-preferences')
         ->assertOk();
 
@@ -23,8 +23,8 @@ it('returns all notification types with default enabled state', function () {
     $types = collect($data)->pluck('type')->toArray();
 
     expect($types)->toContain('shift_published');
-    expect($types)->toContain('shift_changed');
-    expect($types)->toContain('shift_reminder');
+    expect($types)->toContain('schedule_change_alert');
+    expect($types)->toContain('shift_start_reminder');
 
     // All default to enabled
     foreach ($data as $pref) {
@@ -33,16 +33,19 @@ it('returns all notification types with default enabled state', function () {
 });
 
 it('reflects saved preferences in the response', function () {
-    $this->employee->notificationPreferences()->create([
-        'type' => NotificationType::ShiftReminder->value,
-        'enabled' => false,
+    NotificationPreference::create([
+        'user_id' => $this->user->id,
+        'notification_type' => 'shift_start_reminder',
+        'channel_push' => false,
+        'channel_email' => false,
+        'channel_in_app' => false,
     ]);
 
     $response = $this->getJson('/api/employee/notification-preferences')
         ->assertOk();
 
     $reminder = collect($response->json('data'))
-        ->firstWhere('type', 'shift_reminder');
+        ->firstWhere('type', 'shift_start_reminder');
 
     expect($reminder['enabled'])->toBeFalse();
 });
@@ -51,27 +54,34 @@ it('allows an employee to update notification preferences', function () {
     $this->putJson('/api/employee/notification-preferences', [
         'preferences' => [
             ['type' => 'shift_published', 'enabled' => false],
-            ['type' => 'shift_reminder', 'enabled' => false],
+            ['type' => 'shift_start_reminder', 'enabled' => false],
         ],
     ])->assertOk();
 
     $this->assertDatabaseHas('notification_preferences', [
-        'employee_id' => $this->employee->id,
-        'type' => 'shift_published',
-        'enabled' => false,
+        'user_id' => $this->user->id,
+        'notification_type' => 'shift_published',
+        'channel_push' => false,
+        'channel_email' => false,
+        'channel_in_app' => false,
     ]);
 
     $this->assertDatabaseHas('notification_preferences', [
-        'employee_id' => $this->employee->id,
-        'type' => 'shift_reminder',
-        'enabled' => false,
+        'user_id' => $this->user->id,
+        'notification_type' => 'shift_start_reminder',
+        'channel_push' => false,
+        'channel_email' => false,
+        'channel_in_app' => false,
     ]);
 });
 
 it('upserts rather than duplicates existing preferences', function () {
-    $this->employee->notificationPreferences()->create([
-        'type' => NotificationType::ShiftPublished->value,
-        'enabled' => true,
+    NotificationPreference::create([
+        'user_id' => $this->user->id,
+        'notification_type' => 'shift_published',
+        'channel_push' => true,
+        'channel_email' => true,
+        'channel_in_app' => true,
     ]);
 
     $this->putJson('/api/employee/notification-preferences', [
@@ -80,12 +90,16 @@ it('upserts rather than duplicates existing preferences', function () {
         ],
     ])->assertOk();
 
-    expect($this->employee->notificationPreferences()->where('type', 'shift_published')->count())->toBe(1);
+    expect(
+        NotificationPreference::where('user_id', $this->user->id)
+            ->where('notification_type', 'shift_published')
+            ->count()
+    )->toBe(1);
 
     $this->assertDatabaseHas('notification_preferences', [
-        'employee_id' => $this->employee->id,
-        'type' => 'shift_published',
-        'enabled' => false,
+        'user_id' => $this->user->id,
+        'notification_type' => 'shift_published',
+        'channel_push' => false,
     ]);
 });
 

@@ -70,21 +70,13 @@ class Employee extends Model
         return $this->hasMany(ClockEntry::class);
     }
 
-    public function notificationPreferences(): HasMany
-    {
-        return $this->hasMany(NotificationPreference::class);
-    }
-
     /**
      * Check whether the employee has opted in to a notification type.
-     * Defaults to true (enabled) if no preference record exists.
+     * Delegates to the linked User's notification preferences.
      */
     public function prefersNotification(NotificationType $type): bool
     {
-        $preference = $this->notificationPreferences
-            ->firstWhere('type', $type);
-
-        return $preference === null || $preference->enabled;
+        return $this->user?->prefersNotification($type, 'email') ?? true;
     }
 
     /**

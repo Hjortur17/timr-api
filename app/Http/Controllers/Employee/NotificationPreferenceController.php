@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Employee;
 
 use App\Enums\NotificationType;
 use App\Http\Controllers\Controller;
-use App\Http\Middleware\EnsureEmployee;
 use App\Models\NotificationPreference;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,24 +11,27 @@ use Illuminate\Http\Request;
 class NotificationPreferenceController extends Controller
 {
     /**
-     * Return all notification preferences for the authenticated employee.
-     * For any type that has no saved preference, a default enabled record is returned.
+     * Return all employee notification preferences for the authenticated user.
+     * Backward-compatible: returns the simplified { type, label, enabled } shape.
      */
     public function index(Request $request): JsonResponse
     {
-        $employee = $request->user()->employee;
+        $user = $request->user();
 
-        abort_unless($employee, 404);
+        $saved = $user->notificationPreferences()->get()->keyBy(
+            fn (NotificationPreference $p) => $p->notification_type->value
+        );
 
-        $saved = $employee->notificationPreferences()->get()->keyBy('type');
-
-        $preferences = collect(NotificationType::cases())->map(function (NotificationType $type) use ($saved) {
+        $preferences = collect(NotificationType::employeeTypes())->values()->map(function (NotificationType $type) use ($saved) {
             $pref = $saved->get($type->value);
+            $enabled = $pref
+                ? ($pref->channel_push || $pref->channel_email || $pref->channel_in_app)
+                : true;
 
             return [
                 'type' => $type->value,
                 'label' => $type->label(),
-                'enabled' => $pref ? $pref->enabled : true,
+                'enabled' => $enabled,
             ];
         });
 
@@ -40,26 +42,31 @@ class NotificationPreferenceController extends Controller
     }
 
     /**
-     * Update (upsert) notification preferences for the authenticated employee.
-     *
-     * Expects: { preferences: [{ type: "shift_published", enabled: true }, ...] }
+     * Update notification preferences for the authenticated user.
+     * Backward-compatible: accepts { preferences: [{ type, enabled }] }.
      */
     public function update(Request $request): JsonResponse
     {
+        $validTypes = implode(',', array_column(NotificationType::cases(), 'value'));
+
         $request->validate([
             'preferences' => ['required', 'array'],
-            'preferences.*.type' => ['required', 'string', 'in:'.implode(',', array_column(NotificationType::cases(), 'value'))],
+            'preferences.*.type' => ['required', 'string', "in:{$validTypes}"],
             'preferences.*.enabled' => ['required', 'boolean'],
         ]);
 
-        $employee = $request->user()->employee;
-
-        abort_unless($employee, 404);
+        $user = $request->user();
 
         foreach ($request->input('preferences') as $item) {
+            $enabled = $item['enabled'];
+
             NotificationPreference::updateOrCreate(
-                ['employee_id' => $employee->id, 'type' => $item['type']],
-                ['enabled' => $item['enabled']],
+                ['user_id' => $user->id, 'notification_type' => $item['type']],
+                [
+                    'channel_push' => $enabled,
+                    'channel_email' => $enabled,
+                    'channel_in_app' => $enabled,
+                ],
             );
         }
 

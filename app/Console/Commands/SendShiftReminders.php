@@ -32,7 +32,7 @@ class SendShiftReminders extends Command
 
         // Find published assignments starting in the reminder window that haven't been reminded yet
         $assignments = EmployeeShift::query()
-            ->with(['shift', 'employee.notificationPreferences'])
+            ->with(['shift', 'employee.user.notificationPreferences'])
             ->where('published', true)
             ->whereNull('reminder_sent_at')
             ->whereDate('published_date', $targetDate)
@@ -54,7 +54,7 @@ class SendShiftReminders extends Command
 
             if (
                 ! $employee ||
-                ! $employee->prefersNotification(NotificationType::ShiftReminder)
+                ! $employee->prefersNotification(NotificationType::ShiftStartReminder)
             ) {
                 continue;
             }

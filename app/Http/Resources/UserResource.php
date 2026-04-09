@@ -19,6 +19,7 @@ class UserResource extends JsonResource
             'companies' => CompanyResource::collection($this->whenLoaded('companies')),
             'name' => $this->name,
             'email' => $this->email,
+            'locale' => $this->locale,
             'is_active' => $this->is_active,
             'onboarding_step' => $this->onboarding_step,
             'created_at' => $this->created_at,

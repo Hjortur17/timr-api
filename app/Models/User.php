@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CompanyRole;
+use App\Enums\NotificationType;
 use App\Notifications\ResetPasswordNotification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,6 +27,10 @@ class User extends Authenticatable
         'password',
         'is_active',
         'onboarding_step',
+        'locale',
+        'notifications_paused',
+        'quiet_hours_start',
+        'quiet_hours_end',
     ];
 
     protected $hidden = [
@@ -39,6 +44,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'notifications_paused' => 'boolean',
         ];
     }
 
@@ -71,6 +77,36 @@ class User extends Authenticatable
     public function socialAccounts(): HasMany
     {
         return $this->hasMany(SocialAccount::class);
+    }
+
+    public function notificationPreferences(): HasMany
+    {
+        return $this->hasMany(NotificationPreference::class);
+    }
+
+    /**
+     * Check whether the user has opted in to a notification type on a given channel.
+     * Defaults to true (enabled) if no preference record exists.
+     */
+    public function prefersNotification(NotificationType $type, ?string $channel = null): bool
+    {
+        $preference = $this->notificationPreferences
+            ->firstWhere('notification_type', $type);
+
+        if ($preference === null) {
+            return true;
+        }
+
+        if ($channel === null) {
+            return $preference->channel_push || $preference->channel_email || $preference->channel_in_app;
+        }
+
+        return match ($channel) {
+            'push' => $preference->channel_push,
+            'email' => $preference->channel_email,
+            'in_app' => $preference->channel_in_app,
+            default => false,
+        };
     }
 
     public function companyRole(?int $companyId = null): ?CompanyRole

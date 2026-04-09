@@ -159,7 +159,7 @@ class ShiftService
 
         // Dispatch one batched email per affected employee
         $notificationQuery = EmployeeShift::query()
-            ->with(['shift', 'employee.notificationPreferences'])
+            ->with(['shift', 'employee.user.notificationPreferences'])
             ->where('published', true);
 
         if ($from && $to) {

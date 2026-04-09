@@ -3,6 +3,7 @@
 use App\Models\Company;
 use App\Models\Employee;
 use App\Models\EmployeeShift;
+use App\Models\NotificationPreference;
 use App\Models\Shift;
 use App\Models\User;
 use App\Notifications\ShiftChangedNotification;
@@ -80,11 +81,15 @@ it('sends one batched email per employee even with multiple shifts', function ()
 
 it('does not send a notification when employee has disabled shift_published', function () {
     $shift = Shift::factory()->create(['company_id' => $this->company->id]);
-    $employee = Employee::factory()->create(['company_id' => $this->company->id, 'is_active' => true]);
+    $user = User::factory()->create(['company_id' => $this->company->id]);
+    $employee = Employee::factory()->create(['company_id' => $this->company->id, 'user_id' => $user->id, 'is_active' => true]);
 
-    $employee->notificationPreferences()->create([
-        'type' => 'shift_published',
-        'enabled' => false,
+    NotificationPreference::create([
+        'user_id' => $user->id,
+        'notification_type' => 'shift_published',
+        'channel_push' => false,
+        'channel_email' => false,
+        'channel_in_app' => false,
     ]);
 
     EmployeeShift::factory()->create([
@@ -157,13 +162,17 @@ it('sends ShiftChangedNotification when a published assignment is deleted', func
     });
 });
 
-it('does not send ShiftChangedNotification when employee has disabled shift_changed', function () {
+it('does not send ShiftChangedNotification when employee has disabled schedule_change_alert', function () {
     $shift = Shift::factory()->create(['company_id' => $this->company->id]);
-    $employee = Employee::factory()->create(['company_id' => $this->company->id, 'is_active' => true]);
+    $user = User::factory()->create(['company_id' => $this->company->id]);
+    $employee = Employee::factory()->create(['company_id' => $this->company->id, 'user_id' => $user->id, 'is_active' => true]);
 
-    $employee->notificationPreferences()->create([
-        'type' => 'shift_changed',
-        'enabled' => false,
+    NotificationPreference::create([
+        'user_id' => $user->id,
+        'notification_type' => 'schedule_change_alert',
+        'channel_push' => false,
+        'channel_email' => false,
+        'channel_in_app' => false,
     ]);
 
     $assignment = EmployeeShift::factory()->published()->create([

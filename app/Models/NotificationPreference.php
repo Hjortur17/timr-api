@@ -12,21 +12,27 @@ class NotificationPreference extends Model
     use HasFactory;
 
     protected $fillable = [
-        'employee_id',
-        'type',
-        'enabled',
+        'user_id',
+        'notification_type',
+        'channel_push',
+        'channel_email',
+        'channel_in_app',
+        'timing_value',
     ];
 
     protected function casts(): array
     {
         return [
-            'type' => NotificationType::class,
-            'enabled' => 'boolean',
+            'notification_type' => NotificationType::class,
+            'channel_push' => 'boolean',
+            'channel_email' => 'boolean',
+            'channel_in_app' => 'boolean',
+            'timing_value' => 'array',
         ];
     }
 
-    public function employee(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(Employee::class);
+        return $this->belongsTo(User::class);
     }
 }

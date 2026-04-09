@@ -1,19 +1,23 @@
 <?php
 
+use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\Auth\CreateCompanyController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\NotificationPreferenceController as AuthNotificationPreferenceController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\SocialAccountController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Auth\UpdateOnboardingController;
+use App\Http\Controllers\Auth\UpdateProfileController;
 use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\Employee\CalendarSubscribeController;
 use App\Http\Controllers\Employee\ClockController;
 use App\Http\Controllers\Employee\NotificationPreferenceController;
 use App\Http\Controllers\Employee\ShiftController as EmployeeShiftController;
+use App\Http\Controllers\Employee\VacationRequestController as EmployeeVacationRequestController;
 use App\Http\Controllers\Manager\ClockEntryController as ManagerClockEntryController;
 use App\Http\Controllers\Manager\EmployeeController;
 use App\Http\Controllers\Manager\ExportController;
@@ -21,6 +25,8 @@ use App\Http\Controllers\Manager\LocationController;
 use App\Http\Controllers\Manager\ShiftAssignmentController as ManagerShiftAssignmentController;
 use App\Http\Controllers\Manager\ShiftController as ManagerShiftController;
 use App\Http\Controllers\Manager\ShiftTemplateController;
+use App\Http\Controllers\Manager\VacationPolicyController;
+use App\Http\Controllers\Manager\VacationRequestController as ManagerVacationRequestController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('calendar/{token}', [CalendarController::class, 'show']);
@@ -32,14 +38,19 @@ Route::prefix('auth')->group(function () {
     Route::post('reset-password', ResetPasswordController::class);
     Route::post('logout', [LoginController::class, 'logout'])->middleware('auth:sanctum');
     Route::get('user', UserController::class)->middleware('auth:sanctum');
+    Route::patch('user', UpdateProfileController::class)->middleware('auth:sanctum');
     Route::post('company', CreateCompanyController::class)->middleware('auth:sanctum');
     Route::patch('onboarding', UpdateOnboardingController::class)->middleware('auth:sanctum');
+    Route::patch('password', ChangePasswordController::class)->middleware('auth:sanctum');
 
     Route::get('redirect/{provider}', [SocialAuthController::class, 'redirect']);
     Route::get('callback/{provider}', [SocialAuthController::class, 'callback']);
     Route::post('social/{provider}', [SocialAuthController::class, 'token']);
     Route::get('social-accounts', [SocialAccountController::class, 'index'])->middleware('auth:sanctum');
     Route::delete('social-accounts/{socialAccount}', [SocialAccountController::class, 'destroy'])->middleware('auth:sanctum');
+
+    Route::get('notification-preferences', [AuthNotificationPreferenceController::class, 'index'])->middleware('auth:sanctum');
+    Route::put('notification-preferences', [AuthNotificationPreferenceController::class, 'update'])->middleware('auth:sanctum');
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -78,6 +89,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('shift-templates/{shiftTemplate}', [ShiftTemplateController::class, 'update']);
         Route::delete('shift-templates/{shiftTemplate}', [ShiftTemplateController::class, 'destroy']);
         Route::post('shift-templates/{shiftTemplate}/generate', [ShiftTemplateController::class, 'generate']);
+
+        Route::get('vacation-requests', [ManagerVacationRequestController::class, 'index']);
+        Route::get('vacation-requests/{vacationRequest}', [ManagerVacationRequestController::class, 'show']);
+        Route::post('vacation-requests/{vacationRequest}/review', [ManagerVacationRequestController::class, 'review']);
+        Route::get('vacation-policy', [VacationPolicyController::class, 'show']);
+        Route::put('vacation-policy', [VacationPolicyController::class, 'update']);
     });
 
     Route::prefix('employee')->middleware('employee')->group(function () {
@@ -89,5 +106,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('clock-out', [ClockController::class, 'clockOut']);
         Route::get('notification-preferences', [NotificationPreferenceController::class, 'index']);
         Route::put('notification-preferences', [NotificationPreferenceController::class, 'update']);
+
+        Route::get('vacation-requests', [EmployeeVacationRequestController::class, 'index']);
+        Route::post('vacation-requests', [EmployeeVacationRequestController::class, 'store']);
+        Route::post('vacation-requests/{vacationRequest}/cancel', [EmployeeVacationRequestController::class, 'cancel']);
+        Route::get('vacation-balance', [EmployeeVacationRequestController::class, 'balance']);
     });
 });
