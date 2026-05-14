@@ -46,7 +46,9 @@ return [
         'client_secret' => env('APPLE_CLIENT_SECRET'),
         'key_id' => env('APPLE_KEY_ID'),
         'team_id' => env('APPLE_TEAM_ID'),
-        'private_key' => env('APPLE_PRIVATE_KEY'),
+        'private_key' => ($appleKey = env('APPLE_PRIVATE_KEY')) && is_file($appleKeyPath = base_path(ltrim($appleKey, '/')))
+            ? file_get_contents($appleKeyPath)
+            : $appleKey,
         'redirect' => env('APPLE_REDIRECT_URI', '/api/auth/callback/apple'),
     ],
 
