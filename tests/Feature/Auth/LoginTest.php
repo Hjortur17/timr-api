@@ -23,6 +23,18 @@ it('logs in with valid credentials', function () {
         ->assertJsonPath('data.email', $this->user->email);
 });
 
+it('returns companies on login response', function () {
+    $response = $this->postJson('/api/auth/login', [
+        'email' => $this->user->email,
+        'password' => 'password123',
+    ]);
+
+    $response->assertOk()
+        ->assertJsonCount(1, 'data.companies')
+        ->assertJsonPath('data.companies.0.id', $this->company->id)
+        ->assertJsonPath('data.companies.0.role', 'owner');
+});
+
 it('fails login with invalid credentials', function () {
     $this->postJson('/api/auth/login', [
         'email' => $this->user->email,
