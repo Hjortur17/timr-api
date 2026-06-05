@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\SocialAccountController;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Controllers\Auth\SwitchCompanyController;
 use App\Http\Controllers\Auth\UpdateOnboardingController;
 use App\Http\Controllers\Auth\UpdateProfileController;
 use App\Http\Controllers\Auth\UserController;
@@ -40,6 +41,7 @@ Route::prefix('auth')->group(function () {
     Route::get('user', UserController::class)->middleware('auth:sanctum');
     Route::patch('user', UpdateProfileController::class)->middleware('auth:sanctum');
     Route::post('company', CreateCompanyController::class)->middleware('auth:sanctum');
+    Route::patch('active-company', SwitchCompanyController::class)->middleware('auth:sanctum');
     Route::patch('onboarding', UpdateOnboardingController::class)->middleware('auth:sanctum');
     Route::patch('password', ChangePasswordController::class)->middleware('auth:sanctum');
 

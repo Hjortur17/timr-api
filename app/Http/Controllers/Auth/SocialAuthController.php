@@ -63,7 +63,7 @@ class SocialAuthController extends Controller
         $result = $this->socialAuthService->authenticateOrCreate($provider, $socialUser, $validated['name'] ?? null);
 
         return response()->json([
-            'data' => new UserResource($result['user']->load('companies')),
+            'data' => new UserResource($result['user']->load(['companies', 'employee.company'])),
             'token' => $result['token'],
             'is_new' => $result['is_new'],
             'message' => $result['is_new'] ? 'Registration successful.' : 'Login successful.',

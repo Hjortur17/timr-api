@@ -34,7 +34,7 @@ class LoginController extends Controller
         $token = $user->createToken('auth-token', ['*'], $expiresAt)->plainTextToken;
 
         return response()->json([
-            'data' => new UserResource($user->load('companies')),
+            'data' => new UserResource($user->load(['companies', 'employee.company'])),
             'token' => $token,
             'message' => 'Login successful.',
         ]);
