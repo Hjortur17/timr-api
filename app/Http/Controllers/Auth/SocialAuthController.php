@@ -53,13 +53,14 @@ class SocialAuthController extends Controller
     {
         $provider = $this->resolveProvider($provider);
 
-        $request->validate([
+        $validated = $request->validate([
             'token' => ['required', 'string'],
+            'name' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $socialUser = Socialite::driver($provider->value)->stateless()->userFromToken($request->input('token'));
+        $socialUser = Socialite::driver($provider->value)->stateless()->userFromToken($validated['token']);
 
-        $result = $this->socialAuthService->authenticateOrCreate($provider, $socialUser);
+        $result = $this->socialAuthService->authenticateOrCreate($provider, $socialUser, $validated['name'] ?? null);
 
         return response()->json([
             'data' => new UserResource($result['user']->load('companies')),
