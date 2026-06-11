@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\NotificationPreferenceController as AuthNotificationPreferenceController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\SendDashboardLinkController;
 use App\Http\Controllers\Auth\SocialAccountController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Auth\SwitchCompanyController;
@@ -44,6 +45,7 @@ Route::prefix('auth')->group(function () {
     Route::patch('active-company', SwitchCompanyController::class)->middleware('auth:sanctum');
     Route::patch('onboarding', UpdateOnboardingController::class)->middleware('auth:sanctum');
     Route::patch('password', ChangePasswordController::class)->middleware('auth:sanctum');
+    Route::post('send-dashboard-link', SendDashboardLinkController::class)->middleware('auth:sanctum');
 
     Route::get('redirect/{provider}', [SocialAuthController::class, 'redirect']);
     Route::get('callback/{provider}', [SocialAuthController::class, 'callback']);
