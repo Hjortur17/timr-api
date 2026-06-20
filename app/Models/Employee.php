@@ -70,6 +70,11 @@ class Employee extends Model
         return $this->hasMany(ClockEntry::class);
     }
 
+    public function vacationRequests(): HasMany
+    {
+        return $this->hasMany(VacationRequest::class);
+    }
+
     /**
      * Check whether the employee has opted in to a notification type.
      * Delegates to the linked User's notification preferences.

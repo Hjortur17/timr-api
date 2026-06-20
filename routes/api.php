@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\ActiveCompanyController;
 use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\Auth\CreateCompanyController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\Manager\ShiftController as ManagerShiftController;
 use App\Http\Controllers\Manager\ShiftTemplateController;
 use App\Http\Controllers\Manager\VacationPolicyController;
 use App\Http\Controllers\Manager\VacationRequestController as ManagerVacationRequestController;
+use App\Http\Controllers\VacationOverviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('calendar/{token}', [CalendarController::class, 'show']);
@@ -40,6 +42,7 @@ Route::prefix('auth')->group(function () {
     Route::get('user', UserController::class)->middleware('auth:sanctum');
     Route::patch('user', UpdateProfileController::class)->middleware('auth:sanctum');
     Route::post('company', CreateCompanyController::class)->middleware('auth:sanctum');
+    Route::patch('active-company', ActiveCompanyController::class)->middleware('auth:sanctum');
     Route::patch('onboarding', UpdateOnboardingController::class)->middleware('auth:sanctum');
     Route::patch('password', ChangePasswordController::class)->middleware('auth:sanctum');
 
@@ -54,6 +57,9 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->group(function () {
+    // Company-wide vacation overview — visible to any company member (employee or manager).
+    Route::get('vacation-overview', [VacationOverviewController::class, 'index']);
+
     Route::prefix('manager')->middleware('company.role:owner,admin')->group(function () {
         Route::get('employees', [EmployeeController::class, 'index']);
         Route::post('employees', [EmployeeController::class, 'store']);
@@ -91,8 +97,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('shift-templates/{shiftTemplate}/generate', [ShiftTemplateController::class, 'generate']);
 
         Route::get('vacation-requests', [ManagerVacationRequestController::class, 'index']);
+        Route::post('vacation-requests', [ManagerVacationRequestController::class, 'store']);
         Route::get('vacation-requests/{vacationRequest}', [ManagerVacationRequestController::class, 'show']);
+        Route::put('vacation-requests/{vacationRequest}', [ManagerVacationRequestController::class, 'update']);
         Route::post('vacation-requests/{vacationRequest}/review', [ManagerVacationRequestController::class, 'review']);
+        Route::post('vacation-requests/{vacationRequest}/restore', [ManagerVacationRequestController::class, 'restore']);
         Route::get('vacation-policy', [VacationPolicyController::class, 'show']);
         Route::put('vacation-policy', [VacationPolicyController::class, 'update']);
     });
