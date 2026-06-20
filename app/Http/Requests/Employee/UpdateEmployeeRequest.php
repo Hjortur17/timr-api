@@ -19,7 +19,7 @@ class UpdateEmployeeRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'ssn' => ['nullable', 'string', 'max:10'],
-            'email' => ['nullable', 'string', 'email', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
         ];
     }
@@ -31,6 +31,7 @@ class UpdateEmployeeRequest extends FormRequest
     {
         return [
             'name.required' => 'Nafn er nauðsynlegt.',
+            'email.required' => 'Netfang er nauðsynlegt.',
             'email.email' => 'Netfang er ekki gilt.',
         ];
     }

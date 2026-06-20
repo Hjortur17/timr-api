@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Company extends Model
 {
@@ -41,5 +42,15 @@ class Company extends Model
     public function locations(): HasMany
     {
         return $this->hasMany(Location::class);
+    }
+
+    public function vacationPolicy(): HasOne
+    {
+        return $this->hasOne(VacationPolicy::class);
+    }
+
+    public function vacationRequests(): HasMany
+    {
+        return $this->hasMany(VacationRequest::class);
     }
 }

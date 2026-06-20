@@ -49,6 +49,26 @@ it('validates employee creation requires name', function () {
         ->assertJsonValidationErrors(['name']);
 });
 
+it('validates employee creation requires email', function () {
+    $this->postJson('/api/manager/employees', [
+        'name' => 'No Email',
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors(['email']);
+});
+
+it('validates employee update requires email', function () {
+    $employee = Employee::create([
+        'company_id' => $this->company->id,
+        'name' => 'Test',
+        'email' => 'test@acme.com',
+    ]);
+
+    $this->putJson("/api/manager/employees/{$employee->id}", [
+        'name' => 'Test',
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors(['email']);
+});
+
 it('does not list employees from another company', function () {
     $otherCompany = Company::factory()->create();
     Employee::create([
@@ -94,6 +114,7 @@ it('allows a manager to send an invite to an employee', function () {
 it('allows creating an employee with ssn', function () {
     $this->postJson('/api/manager/employees', [
         'name' => 'Jón Jónsson',
+        'email' => 'jon@acme.com',
         'ssn' => '1234567890',
     ])->assertCreated()
         ->assertJsonPath('data.ssn', '1234567890');
@@ -104,6 +125,7 @@ it('allows creating an employee with ssn', function () {
 it('allows creating an employee without ssn', function () {
     $this->postJson('/api/manager/employees', [
         'name' => 'Guðrún',
+        'email' => 'gudrun@acme.com',
     ])->assertCreated()
         ->assertJsonPath('data.ssn', null);
 });
@@ -112,10 +134,12 @@ it('allows updating employee ssn', function () {
     $employee = Employee::create([
         'company_id' => $this->company->id,
         'name' => 'Test',
+        'email' => 'test@acme.com',
     ]);
 
     $this->putJson("/api/manager/employees/{$employee->id}", [
         'name' => 'Test',
+        'email' => 'test@acme.com',
         'ssn' => '0987654321',
     ])->assertOk()
         ->assertJsonPath('data.ssn', '0987654321');

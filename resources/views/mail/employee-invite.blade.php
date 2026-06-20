@@ -22,7 +22,7 @@
 
         <p>Þú hefur verið bætt við sem starfsmaður á Timr. Smelltu á hnappinn hér að neðan til að búa til aðgang þinn.</p>
 
-        <a href="{{ config('app.frontend_url') }}/register?token={{ $employee->invite_token }}&email={{ urlencode($employee->email) }}" class="btn">
+        <a href="{{ config('app.frontend_url') }}/register?token={{ $employee->invite_token }}&email={{ urlencode($employee->email) }}&name={{ urlencode($employee->name) }}" class="btn">
             Búa til aðgang
         </a>
 

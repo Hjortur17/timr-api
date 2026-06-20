@@ -2,6 +2,9 @@
 
 namespace App\Http\Requests\Shift;
 
+use App\Enums\VacationRequestStatus;
+use App\Models\VacationRequest;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -41,6 +44,31 @@ class StoreShiftAssignmentRequest extends FormRequest
             ],
             'published' => ['sometimes', 'boolean'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $employeeId = $this->input('employee_id');
+            $date = $this->input('date');
+
+            if (! $employeeId || ! $date) {
+                return;
+            }
+
+            if (VacationRequest::query()
+                ->where('employee_id', $employeeId)
+                ->where('status', VacationRequestStatus::Approved->value)
+                ->whereDate('start_date', '<=', $date)
+                ->whereDate('end_date', '>=', $date)
+                ->exists()
+            ) {
+                $validator->errors()->add(
+                    'date',
+                    'This employee is on approved vacation on this date.',
+                );
+            }
+        });
     }
 
     /**

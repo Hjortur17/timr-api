@@ -5,6 +5,7 @@ use App\Models\Employee;
 use App\Models\EmployeeShift;
 use App\Models\Shift;
 use App\Models\User;
+use App\Models\VacationRequest;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
@@ -160,4 +161,60 @@ it('moving a published assignment to a different employee preserves published_em
     ])->assertOk()
         ->assertJsonPath('data.employee_id', $employeeB->id)
         ->assertJsonPath('data.published_employee_id', $this->employee->id);
+});
+
+it('rejects assigning a shift on an approved vacation day', function () {
+    VacationRequest::factory()->create([
+        'company_id' => $this->company->id,
+        'employee_id' => $this->employee->id,
+        'status' => 'approved',
+        'start_date' => '2026-07-06',
+        'end_date' => '2026-07-10',
+    ]);
+
+    $this->postJson('/api/manager/shift-assignments', [
+        'shift_id' => $this->shift->id,
+        'employee_id' => $this->employee->id,
+        'date' => '2026-07-08',
+    ])->assertStatus(422)
+        ->assertJsonValidationErrors('date');
+
+    expect(EmployeeShift::count())->toBe(0);
+});
+
+it('allows assigning a shift on a pending (not-yet-approved) vacation day', function () {
+    VacationRequest::factory()->create([
+        'company_id' => $this->company->id,
+        'employee_id' => $this->employee->id,
+        'status' => 'pending',
+        'start_date' => '2026-07-06',
+        'end_date' => '2026-07-10',
+    ]);
+
+    $this->postJson('/api/manager/shift-assignments', [
+        'shift_id' => $this->shift->id,
+        'employee_id' => $this->employee->id,
+        'date' => '2026-07-08',
+    ])->assertCreated();
+});
+
+it('rejects moving an assignment onto an approved vacation day', function () {
+    $assignment = EmployeeShift::create([
+        'shift_id' => $this->shift->id,
+        'employee_id' => $this->employee->id,
+        'date' => '2026-07-01',
+        'published' => false,
+    ]);
+    VacationRequest::factory()->create([
+        'company_id' => $this->company->id,
+        'employee_id' => $this->employee->id,
+        'status' => 'approved',
+        'start_date' => '2026-07-06',
+        'end_date' => '2026-07-10',
+    ]);
+
+    $this->putJson("/api/manager/shift-assignments/{$assignment->id}", [
+        'date' => '2026-07-08',
+    ])->assertStatus(422)
+        ->assertJsonValidationErrors('date');
 });
