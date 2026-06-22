@@ -11,7 +11,7 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\SendDashboardLinkController;
 use App\Http\Controllers\Auth\SocialAccountController;
 use App\Http\Controllers\Auth\SocialAuthController;
-use App\Http\Controllers\Auth\SwitchCompanyController;
+use App\Http\Controllers\Auth\SubscriptionController;
 use App\Http\Controllers\Auth\UpdateOnboardingController;
 use App\Http\Controllers\Auth\UpdateProfileController;
 use App\Http\Controllers\Auth\UserController;
@@ -44,6 +44,7 @@ Route::prefix('auth')->group(function () {
     Route::get('user', UserController::class)->middleware('auth:sanctum');
     Route::patch('user', UpdateProfileController::class)->middleware('auth:sanctum');
     Route::post('company', CreateCompanyController::class)->middleware('auth:sanctum');
+    Route::get('subscription', SubscriptionController::class)->middleware('auth:sanctum');
     Route::patch('active-company', ActiveCompanyController::class)->middleware('auth:sanctum');
     Route::patch('onboarding', UpdateOnboardingController::class)->middleware('auth:sanctum');
     Route::patch('password', ChangePasswordController::class)->middleware('auth:sanctum');
@@ -63,7 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Company-wide vacation overview — visible to any company member (employee or manager).
     Route::get('vacation-overview', [VacationOverviewController::class, 'index']);
 
-    Route::prefix('manager')->middleware('company.role:owner,admin')->group(function () {
+    Route::prefix('manager')->middleware(['company.role:owner,admin', 'subscription:manager'])->group(function () {
         Route::get('employees', [EmployeeController::class, 'index']);
         Route::post('employees', [EmployeeController::class, 'store']);
         Route::put('employees/{employee:id}', [EmployeeController::class, 'update']);
@@ -109,7 +110,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('vacation-policy', [VacationPolicyController::class, 'update']);
     });
 
-    Route::prefix('employee')->middleware('employee')->group(function () {
+    Route::prefix('employee')->middleware(['employee', 'subscription:employee'])->group(function () {
         Route::get('shifts/ical', [EmployeeShiftController::class, 'ical']);
         Route::get('shifts', [EmployeeShiftController::class, 'index']);
         Route::post('calendar-subscribe', CalendarSubscribeController::class);

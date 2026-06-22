@@ -53,4 +53,9 @@ class Company extends Model
     {
         return $this->hasMany(VacationRequest::class);
     }
+
+    public function subscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class);
+    }
 }

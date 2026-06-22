@@ -74,6 +74,14 @@ class User extends Authenticatable
         return $this->hasOne(Employee::class);
     }
 
+    /**
+     * The active company's subscription, matched on company_id (not user_id).
+     */
+    public function subscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class, 'company_id', 'company_id');
+    }
+
     public function socialAccounts(): HasMany
     {
         return $this->hasMany(SocialAccount::class);

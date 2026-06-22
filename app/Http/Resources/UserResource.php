@@ -17,6 +17,7 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'company_id' => $this->company_id,
             'companies' => CompanyResource::collection($this->whenLoaded('companies')),
+            'subscription' => new SubscriptionResource($this->whenLoaded('subscription')),
             'employee' => new EmployeeResource($this->whenLoaded('employee')),
             'name' => $this->name,
             'email' => $this->email,

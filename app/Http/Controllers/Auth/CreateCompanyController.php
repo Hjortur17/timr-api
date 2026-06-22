@@ -6,6 +6,7 @@ use App\Enums\CompanyRole;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\Company;
+use App\Services\SubscriptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +15,7 @@ use Illuminate\Validation\ValidationException;
 
 class CreateCompanyController extends Controller
 {
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(Request $request, SubscriptionService $subscriptions): JsonResponse
     {
         $user = $request->user();
 
@@ -26,9 +27,11 @@ class CreateCompanyController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'tier' => ['nullable', 'string'],
+            'billing_period' => ['nullable', 'string', 'in:monthly,yearly'],
         ]);
 
-        $company = DB::transaction(function () use ($user, $validated) {
+        $company = DB::transaction(function () use ($user, $validated, $subscriptions) {
             $company = Company::create([
                 'name' => $validated['name'],
                 'slug' => Str::slug($validated['name']).'-'.Str::random(5),
@@ -40,6 +43,12 @@ class CreateCompanyController extends Controller
             ]);
 
             $user->companies()->attach($company->id, ['role' => CompanyRole::Owner->value]);
+
+            $subscriptions->startTrial(
+                $company,
+                $validated['tier'] ?? null,
+                $validated['billing_period'] ?? null,
+            );
 
             return $company;
         });

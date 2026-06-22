@@ -11,7 +11,7 @@ class UserController extends Controller
 {
     public function __invoke(Request $request): JsonResponse
     {
-        $user = $request->user()->load(['companies', 'employee.company']);
+        $user = $request->user()->load(['companies', 'employee.company', 'subscription.plan']);
 
         return response()->json([
             'data' => new UserResource($user),
