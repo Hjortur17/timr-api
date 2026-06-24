@@ -22,9 +22,11 @@ use App\Http\Controllers\Employee\NotificationPreferenceController;
 use App\Http\Controllers\Employee\ShiftController as EmployeeShiftController;
 use App\Http\Controllers\Employee\VacationRequestController as EmployeeVacationRequestController;
 use App\Http\Controllers\Manager\ClockEntryController as ManagerClockEntryController;
+use App\Http\Controllers\Manager\CompanyLogoController;
 use App\Http\Controllers\Manager\EmployeeController;
 use App\Http\Controllers\Manager\ExportController;
 use App\Http\Controllers\Manager\LocationController;
+use App\Http\Controllers\Manager\OpeningHoursController;
 use App\Http\Controllers\Manager\ShiftAssignmentController as ManagerShiftAssignmentController;
 use App\Http\Controllers\Manager\ShiftController as ManagerShiftController;
 use App\Http\Controllers\Manager\ShiftTemplateController;
@@ -93,6 +95,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('locations', [LocationController::class, 'index']);
         Route::post('locations', [LocationController::class, 'store']);
+        Route::put('locations/{location}', [LocationController::class, 'update']);
+        Route::delete('locations/{location}', [LocationController::class, 'destroy']);
+
+        Route::get('opening-hours', [OpeningHoursController::class, 'show']);
+        Route::put('opening-hours', [OpeningHoursController::class, 'update']);
+
+        Route::post('company/logo', [CompanyLogoController::class, 'store']);
+        Route::delete('company/logo', [CompanyLogoController::class, 'destroy']);
 
         Route::get('shift-templates', [ShiftTemplateController::class, 'index']);
         Route::post('shift-templates', [ShiftTemplateController::class, 'store']);

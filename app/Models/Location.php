@@ -18,6 +18,8 @@ class Location extends Model
         'latitude',
         'longitude',
         'geo_fence_radius',
+        'opening_hours_mode',
+        'opening_hours',
     ];
 
     protected function casts(): array
@@ -26,6 +28,7 @@ class Location extends Model
             'latitude' => 'float',
             'longitude' => 'float',
             'geo_fence_radius' => 'integer',
+            'opening_hours' => 'array',
         ];
     }
 

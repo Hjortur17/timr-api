@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Storage;
 
 class Company extends Model
 {
@@ -15,7 +17,26 @@ class Company extends Model
     protected $fillable = [
         'name',
         'slug',
+        'opening_hours',
+        'logo_path',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'opening_hours' => 'array',
+        ];
+    }
+
+    /**
+     * Public URL for the company logo, or null when none is set.
+     */
+    protected function logoUrl(): Attribute
+    {
+        return Attribute::get(
+            fn () => $this->logo_path ? Storage::disk('public')->url($this->logo_path) : null,
+        );
+    }
 
     public function users(): HasMany
     {

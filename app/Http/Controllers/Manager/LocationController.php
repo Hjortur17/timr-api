@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Manager\StoreLocationRequest;
+use App\Http\Requests\Manager\UpdateLocationRequest;
 use App\Http\Resources\LocationResource;
 use App\Models\Location;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class LocationController extends Controller
 {
@@ -20,18 +21,10 @@ class LocationController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreLocationRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'latitude' => ['required', 'numeric', 'between:-90,90'],
-            'longitude' => ['required', 'numeric', 'between:-180,180'],
-            'geo_fence_radius' => ['required', 'integer', 'min:1'],
-        ]);
-
         $location = Location::create([
-            ...$validated,
+            ...$request->validated(),
             'company_id' => $request->user()->company_id,
         ]);
 
@@ -39,5 +32,24 @@ class LocationController extends Controller
             'data' => new LocationResource($location),
             'message' => 'Location created successfully.',
         ], 201);
+    }
+
+    public function update(UpdateLocationRequest $request, Location $location): JsonResponse
+    {
+        $location->update($request->validated());
+
+        return response()->json([
+            'data' => new LocationResource($location->fresh()),
+            'message' => 'Location updated successfully.',
+        ]);
+    }
+
+    public function destroy(Location $location): JsonResponse
+    {
+        $location->delete();
+
+        return response()->json([
+            'message' => 'Location deleted successfully.',
+        ]);
     }
 }

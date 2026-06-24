@@ -21,6 +21,8 @@ class LocationResource extends JsonResource
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
             'geo_fence_radius' => $this->geo_fence_radius,
+            'opening_hours_mode' => $this->opening_hours_mode ?? 'global',
+            'opening_hours' => $this->opening_hours,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

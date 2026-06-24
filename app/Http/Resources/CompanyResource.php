@@ -16,6 +16,7 @@ class CompanyResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'logo_url' => $this->logo_url,
             'role' => $this->whenPivotLoaded('company_user', fn () => $this->pivot->role),
         ];
     }

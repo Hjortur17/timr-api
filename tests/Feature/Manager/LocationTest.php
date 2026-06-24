@@ -42,7 +42,77 @@ it('allows a manager to create a location', function () {
 it('validates location creation data', function () {
     $this->postJson('/api/manager/locations', [])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['name', 'latitude', 'longitude', 'geo_fence_radius']);
+        ->assertJsonValidationErrors(['name'])
+        ->assertJsonMissingValidationErrors(['latitude', 'longitude', 'geo_fence_radius']);
+});
+
+it('allows creating a workplace with GPS turned off', function () {
+    $this->postJson('/api/manager/locations', [
+        'name' => 'Remote',
+        'address' => null,
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.geo_fence_radius', null)
+        ->assertJsonPath('data.opening_hours_mode', 'global')
+        ->assertJsonPath('data.opening_hours', null);
+});
+
+it('stores and reads back custom opening hours', function () {
+    $hours = [
+        'days' => [true, true, true, true, true, false, false],
+        'time_mode' => 'perday',
+        'open' => '11:00',
+        'close' => '14:00',
+        'times' => array_fill(0, 7, ['open' => '11:00', 'close' => '14:00']),
+        'exc' => [['date' => '2026-06-17', 'label' => 'Þjóðhátíð', 'mode' => 'closed', 'open' => null, 'close' => null]],
+    ];
+
+    $this->postJson('/api/manager/locations', [
+        'name' => 'Skólavörðustígur 8',
+        'opening_hours_mode' => 'custom',
+        'opening_hours' => $hours,
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.opening_hours_mode', 'custom')
+        ->assertJsonPath('data.opening_hours.time_mode', 'perday')
+        ->assertJsonPath('data.opening_hours.exc.0.date', '2026-06-17');
+});
+
+it('requires opening hours when mode is custom', function () {
+    $this->postJson('/api/manager/locations', [
+        'name' => 'Bad',
+        'opening_hours_mode' => 'custom',
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('opening_hours');
+});
+
+it('allows a manager to update a location', function () {
+    $location = Location::factory()->create(['company_id' => $this->company->id, 'name' => 'Old']);
+
+    $this->putJson("/api/manager/locations/{$location->id}", [
+        'name' => 'New Name',
+        'opening_hours_mode' => 'global',
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.name', 'New Name')
+        ->assertJsonPath('data.opening_hours', null);
+});
+
+it('allows a manager to delete a location', function () {
+    $location = Location::factory()->create(['company_id' => $this->company->id]);
+
+    $this->deleteJson("/api/manager/locations/{$location->id}")->assertOk();
+
+    expect(Location::withoutGlobalScope('company')->count())->toBe(0);
+});
+
+it('does not allow updating a location from another company', function () {
+    $otherCompany = Company::factory()->create();
+    $location = Location::factory()->create(['company_id' => $otherCompany->id]);
+
+    $this->putJson("/api/manager/locations/{$location->id}", ['name' => 'Hijack'])
+        ->assertNotFound();
 });
 
 it('does not list locations from another company', function () {
