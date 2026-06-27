@@ -22,6 +22,7 @@ use App\Http\Controllers\Employee\NotificationPreferenceController;
 use App\Http\Controllers\Employee\ShiftController as EmployeeShiftController;
 use App\Http\Controllers\Employee\VacationRequestController as EmployeeVacationRequestController;
 use App\Http\Controllers\Manager\ClockEntryController as ManagerClockEntryController;
+use App\Http\Controllers\Manager\CompanyController;
 use App\Http\Controllers\Manager\CompanyLogoController;
 use App\Http\Controllers\Manager\EmployeeController;
 use App\Http\Controllers\Manager\ExportController;
@@ -101,6 +102,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('opening-hours', [OpeningHoursController::class, 'show']);
         Route::put('opening-hours', [OpeningHoursController::class, 'update']);
 
+        Route::patch('company', [CompanyController::class, 'update']);
         Route::post('company/logo', [CompanyLogoController::class, 'store']);
         Route::delete('company/logo', [CompanyLogoController::class, 'destroy']);
 

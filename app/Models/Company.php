@@ -17,6 +17,11 @@ class Company extends Model
     protected $fillable = [
         'name',
         'slug',
+        'kennitala',
+        'phone',
+        'address',
+        'email',
+        'locale',
         'opening_hours',
         'logo_path',
     ];
