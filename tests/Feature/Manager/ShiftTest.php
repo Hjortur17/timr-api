@@ -38,6 +38,55 @@ it('allows a manager to create a shift', function () {
     expect(Shift::count())->toBe(1);
 });
 
+it('allows a manager to create a shift tied to a workplace', function () {
+    $location = \App\Models\Location::factory()->create([
+        'company_id' => $this->company->id,
+    ]);
+
+    $this->postJson('/api/manager/shifts', [
+        'title' => 'Morning Shift',
+        'start_time' => '08:00',
+        'end_time' => '16:00',
+        'location_id' => $location->id,
+    ])->assertCreated()
+        ->assertJsonPath('data.location_id', $location->id)
+        ->assertJsonPath('data.location.id', $location->id);
+
+    expect(Shift::sole()->location_id)->toBe($location->id);
+});
+
+it('rejects a workplace from another company', function () {
+    $otherCompany = Company::factory()->create();
+    $foreignLocation = \App\Models\Location::factory()->create([
+        'company_id' => $otherCompany->id,
+    ]);
+
+    $this->postJson('/api/manager/shifts', [
+        'title' => 'Morning Shift',
+        'start_time' => '08:00',
+        'end_time' => '16:00',
+        'location_id' => $foreignLocation->id,
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('location_id');
+});
+
+it('allows clearing a shift workplace', function () {
+    $location = \App\Models\Location::factory()->create([
+        'company_id' => $this->company->id,
+    ]);
+    $shift = Shift::factory()->create([
+        'company_id' => $this->company->id,
+        'location_id' => $location->id,
+    ]);
+
+    $this->putJson("/api/manager/shifts/{$shift->id}", [
+        'location_id' => null,
+    ])->assertOk()
+        ->assertJsonPath('data.location_id', null);
+
+    expect($shift->fresh()->location_id)->toBeNull();
+});
+
 it('allows a manager to update a shift', function () {
     $shift = Shift::factory()->create([
         'company_id' => $this->company->id,

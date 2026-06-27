@@ -16,6 +16,7 @@ class Shift extends Model
 
     protected $fillable = [
         'company_id',
+        'location_id',
         'title',
         'start_time',
         'end_time',
@@ -39,6 +40,11 @@ class Shift extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
     }
 
     public function employees(): BelongsToMany

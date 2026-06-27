@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Shift;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreShiftRequest extends FormRequest
 {
@@ -12,7 +13,7 @@ class StoreShiftRequest extends FormRequest
     }
 
     /**
-     * @return array<string, array<int, string>>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
@@ -21,6 +22,11 @@ class StoreShiftRequest extends FormRequest
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i'],
             'notes' => ['nullable', 'string'],
+            'location_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('locations', 'id')->where('company_id', $this->user()->company_id),
+            ],
             'employee_ids' => ['nullable', 'array'],
             'employee_ids.*' => ['exists:employees,id'],
         ];

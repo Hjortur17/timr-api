@@ -15,7 +15,7 @@ class ShiftService
     public function listForCompany(): Collection
     {
         return Shift::query()
-            ->with('employees')
+            ->with('employees', 'location')
             ->oldest('start_time')
             ->get();
     }
@@ -23,7 +23,7 @@ class ShiftService
     public function listAssignmentsForEmployee(Employee $employee, ?string $from = null, ?string $to = null): Collection
     {
         $query = EmployeeShift::query()
-            ->with('shift')
+            ->with('shift.location')
             ->where('published_employee_id', $employee->id)
             ->where('published', true);
 
@@ -52,7 +52,7 @@ class ShiftService
             $shift->employees()->attach($employeeIds);
         }
 
-        return $shift->load('employees');
+        return $shift->load('employees', 'location');
     }
 
     /**
@@ -69,7 +69,7 @@ class ShiftService
             $shift->employees()->sync($employeeIds);
         }
 
-        return $shift->fresh('employees');
+        return $shift->fresh(['employees', 'location']);
     }
 
     /**

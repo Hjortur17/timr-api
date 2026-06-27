@@ -35,17 +35,27 @@ class ClockService
             ]);
         }
 
-        $location = Location::query()
-            ->withoutGlobalScope('company')
-            ->where('company_id', $employee->company_id)
-            ->first();
+        // Geo-fence against the shift's own workplace. For an extra clock-in (no
+        // shift) or a shift with no workplace, fall back to the nearest workplace.
+        $location = $shift?->location ?? $this->geoFenceService->nearest(
+            $latitude,
+            $longitude,
+            Location::query()
+                ->withoutGlobalScope('company')
+                ->where('company_id', $employee->company_id)
+                ->get(),
+        );
 
-        if ($location) {
+        // Only enforce when the workplace has GPS configured; a workplace with GPS
+        // off (null radius/coords) records the location but imposes no fence.
+        if ($location && $location->geo_fence_radius !== null
+            && $location->latitude !== null && $location->longitude !== null) {
             $this->geoFenceService->validateWithinRange($latitude, $longitude, $location);
         }
 
         return ClockEntry::create([
             'shift_id' => $shift?->id,
+            'location_id' => $location?->id,
             'employee_id' => $employee->id,
             'clocked_in_at' => now(),
             'clock_in_lat' => $latitude,

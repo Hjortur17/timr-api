@@ -16,6 +16,8 @@ class ShiftResource extends JsonResource
         return [
             'id' => $this->id,
             'company_id' => $this->company_id,
+            'location_id' => $this->location_id,
+            'location' => new LocationResource($this->whenLoaded('location')),
             'employees' => EmployeeResource::collection($this->whenLoaded('employees')),
             'title' => $this->title,
             'start_time' => $this->start_time,

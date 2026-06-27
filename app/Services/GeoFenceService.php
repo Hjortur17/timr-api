@@ -3,11 +3,26 @@
 namespace App\Services;
 
 use App\Models\Location;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 class GeoFenceService
 {
     private const EARTH_RADIUS_METERS = 6_371_000;
+
+    /**
+     * The geographically closest location to the given coordinates, ignoring
+     * any location without GPS coordinates. Null when none are positioned.
+     *
+     * @param  Collection<int, Location>  $locations
+     */
+    public function nearest(float $lat, float $lng, Collection $locations): ?Location
+    {
+        return $locations
+            ->filter(fn (Location $l) => $l->latitude !== null && $l->longitude !== null)
+            ->sortBy(fn (Location $l) => $this->haversineDistance($lat, $lng, $l->latitude, $l->longitude))
+            ->first();
+    }
 
     public function isWithinRange(float $lat, float $lng, Location $location): bool
     {

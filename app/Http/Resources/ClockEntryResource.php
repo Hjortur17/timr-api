@@ -47,6 +47,13 @@ class ClockEntryResource extends JsonResource
             ];
         }
 
+        if ($this->relationLoaded('location') && $this->location) {
+            $data['location'] = [
+                'id' => $this->location->id,
+                'name' => $this->location->name,
+            ];
+        }
+
         return $data;
     }
 }

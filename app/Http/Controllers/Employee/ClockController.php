@@ -25,7 +25,7 @@ class ClockController extends Controller
             ->firstOrFail();
 
         $query = ClockEntry::query()
-            ->with('shift')
+            ->with('shift.location', 'location')
             ->where('employee_id', $employee->id)
             ->orderByDesc('clocked_in_at');
 
