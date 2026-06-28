@@ -277,7 +277,7 @@ it('claims an unclaimed employee invite by matching email on first social sign-i
     $response->assertCreated()
         ->assertJsonPath('is_new', true)
         ->assertJsonPath('data.company_id', $company->id)
-        ->assertJsonPath('data.onboarding_step', 6);
+        ->assertJsonPath('data.onboarding_step', 5);
 
     $user = User::withoutGlobalScope('company')->where('email', 'invited@example.com')->first();
 

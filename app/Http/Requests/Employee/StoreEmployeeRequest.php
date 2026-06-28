@@ -21,6 +21,7 @@ class StoreEmployeeRequest extends FormRequest
             'ssn' => ['nullable', 'string', 'max:10'],
             'email' => ['required', 'string', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
+            'role' => ['nullable', 'string', 'in:employee,shift_manager,admin'],
         ];
     }
 

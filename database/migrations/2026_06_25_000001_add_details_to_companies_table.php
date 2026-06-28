@@ -11,10 +11,7 @@ return new class extends Migration
         Schema::table('companies', function (Blueprint $table) {
             // Editable company details surfaced on the settings → company page.
             $table->string('kennitala')->nullable()->after('name');
-            $table->string('phone')->nullable()->after('kennitala');
-            $table->string('address')->nullable()->after('phone');
-            $table->string('email')->nullable()->after('address');
-            $table->string('locale')->default('is')->after('email');
+            $table->string('locale')->default('is')->after('kennitala');
         });
     }
 
@@ -23,9 +20,6 @@ return new class extends Migration
         Schema::table('companies', function (Blueprint $table) {
             $table->dropColumn([
                 'kennitala',
-                'phone',
-                'address',
-                'email',
                 'locale',
             ]);
         });

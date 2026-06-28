@@ -22,6 +22,7 @@ class Employee extends Model
         'name',
         'email',
         'phone',
+        'role',
         'invite_token',
         'invite_sent_at',
         'calendar_token',

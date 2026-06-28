@@ -19,6 +19,7 @@ class EmployeeResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'phone' => $this->phone,
+            'role' => $this->role,
             'is_active' => $this->is_active,
             'has_account' => $this->user_id !== null,
             'company' => new CompanyResource($this->whenLoaded('company')),

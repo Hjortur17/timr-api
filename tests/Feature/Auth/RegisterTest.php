@@ -50,11 +50,11 @@ it('registers an invited employee, links them to the company, and clears the tok
         'invite_token' => 'test-token-uuid',
     ])->assertCreated()
         ->assertJsonPath('data.company_id', $company->id)
-        ->assertJsonPath('data.onboarding_step', 6);
+        ->assertJsonPath('data.onboarding_step', 5);
 
     $user = User::withoutGlobalScope('company')->where('email', 'jane@acme.com')->first();
     expect($user->company_id)->toBe($company->id);
-    expect($user->onboarding_step)->toBe(6);
+    expect($user->onboarding_step)->toBe(5);
 
     $employee->refresh();
     expect($employee->user_id)->toBe($user->id);

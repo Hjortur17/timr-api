@@ -152,7 +152,7 @@ class SocialAuthService
 
         $user->update([
             'company_id' => $employee->company_id,
-            'onboarding_step' => 6,
+            'onboarding_step' => 5,
         ]);
     }
 }

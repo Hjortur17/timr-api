@@ -16,9 +16,6 @@ it('allows a manager to update company details', function () {
     $payload = [
         'name' => 'Acme ehf.',
         'kennitala' => '5012345679',
-        'phone' => '+354 555 1234',
-        'address' => 'Laugavegur 1, 101 Reykjavík',
-        'email' => 'hi@acme.is',
         'locale' => 'en',
     ];
 
@@ -26,29 +23,24 @@ it('allows a manager to update company details', function () {
         ->assertOk()
         ->assertJsonPath('data.name', 'Acme ehf.')
         ->assertJsonPath('data.kennitala', '5012345679')
-        ->assertJsonPath('data.email', 'hi@acme.is')
         ->assertJsonPath('data.locale', 'en');
 
     $this->company->refresh();
     expect($this->company->name)->toBe('Acme ehf.');
     expect($this->company->kennitala)->toBe('5012345679');
-    expect($this->company->address)->toBe('Laugavegur 1, 101 Reykjavík');
     expect($this->company->locale)->toBe('en');
 });
 
-it('allows clearing optional company details', function () {
-    $this->company->update(['phone' => '+354 555 0000', 'email' => 'old@acme.is']);
+it('allows clearing the optional kennitala', function () {
+    $this->company->update(['kennitala' => '5012345679']);
 
     $this->patchJson('/api/manager/company', [
         'name' => 'Acme ehf.',
-        'phone' => null,
-        'email' => null,
+        'kennitala' => null,
         'locale' => 'is',
     ])->assertOk();
 
-    $this->company->refresh();
-    expect($this->company->phone)->toBeNull();
-    expect($this->company->email)->toBeNull();
+    expect($this->company->refresh()->kennitala)->toBeNull();
 });
 
 it('requires a company name', function () {
@@ -56,14 +48,6 @@ it('requires a company name', function () {
         'name' => '',
         'locale' => 'is',
     ])->assertUnprocessable()->assertJsonValidationErrors('name');
-});
-
-it('rejects an invalid email', function () {
-    $this->patchJson('/api/manager/company', [
-        'name' => 'Acme ehf.',
-        'email' => 'not-an-email',
-        'locale' => 'is',
-    ])->assertUnprocessable()->assertJsonValidationErrors('email');
 });
 
 it('rejects an unsupported locale', function () {

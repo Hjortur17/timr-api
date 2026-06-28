@@ -27,6 +27,8 @@ class CreateCompanyController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'kennitala' => ['nullable', 'string', 'max:20'],
+            'locale' => ['nullable', 'in:is,en'],
             'tier' => ['nullable', 'string'],
             'billing_period' => ['nullable', 'string', 'in:monthly,yearly'],
         ]);
@@ -35,6 +37,8 @@ class CreateCompanyController extends Controller
             $company = Company::create([
                 'name' => $validated['name'],
                 'slug' => Str::slug($validated['name']).'-'.Str::random(5),
+                'kennitala' => $validated['kennitala'] ?? null,
+                'locale' => $validated['locale'] ?? 'is',
             ]);
 
             $user->update([

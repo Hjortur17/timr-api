@@ -20,9 +20,6 @@ class UpdateCompanyRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'kennitala' => ['nullable', 'string', 'max:20'],
-            'phone' => ['nullable', 'string', 'max:50'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
             'locale' => ['required', Rule::in(['is', 'en'])],
         ];
     }

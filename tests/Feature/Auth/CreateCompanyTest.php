@@ -34,6 +34,38 @@ it('creates a company for a user without one', function () {
     expect(Company::first()->name)->toBe('Acme Corp');
 });
 
+it('stores the kennitala and locale when provided', function () {
+    $user = User::withoutGlobalScope('company')->create([
+        'name' => 'John',
+        'email' => 'john@example.com',
+        'password' => bcrypt('password123'),
+    ]);
+
+    $this->actingAs($user)->postJson('/api/auth/company', [
+        'name' => 'Acme Corp',
+        'kennitala' => '1234567890',
+        'locale' => 'en',
+    ])->assertCreated();
+
+    $company = Company::firstOrFail();
+    expect($company->kennitala)->toBe('1234567890');
+    expect($company->locale)->toBe('en');
+});
+
+it('defaults the company locale to Icelandic when omitted', function () {
+    $user = User::withoutGlobalScope('company')->create([
+        'name' => 'John',
+        'email' => 'john@example.com',
+        'password' => bcrypt('password123'),
+    ]);
+
+    $this->actingAs($user)->postJson('/api/auth/company', [
+        'name' => 'Acme Corp',
+    ])->assertCreated();
+
+    expect(Company::firstOrFail()->locale)->toBe('is');
+});
+
 it('starts a 30-day trial on the selected tier when creating a company', function () {
     $user = User::withoutGlobalScope('company')->create([
         'name' => 'John',

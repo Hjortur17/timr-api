@@ -111,6 +111,26 @@ it('allows a manager to send an invite to an employee', function () {
     });
 });
 
+it('allows creating an employee with a role', function () {
+    $this->postJson('/api/manager/employees', [
+        'name' => 'Halla Stjóri',
+        'email' => 'halla@acme.com',
+        'role' => 'shift_manager',
+    ])->assertCreated()
+        ->assertJsonPath('data.role', 'shift_manager');
+
+    expect(Employee::first()->role)->toBe('shift_manager');
+});
+
+it('rejects an unknown employee role', function () {
+    $this->postJson('/api/manager/employees', [
+        'name' => 'Bad Role',
+        'email' => 'bad@acme.com',
+        'role' => 'wizard',
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors(['role']);
+});
+
 it('allows creating an employee with ssn', function () {
     $this->postJson('/api/manager/employees', [
         'name' => 'Jón Jónsson',
