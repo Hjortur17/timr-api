@@ -21,6 +21,7 @@ class Subscription extends Model
         'current_period_ends_at',
         'grace_ends_at',
         'verifone_reference',
+        'billing_email',
         'canceled_at',
     ];
 
@@ -44,6 +45,30 @@ class Subscription extends Model
     public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class);
+    }
+
+    /**
+     * Number of active employees in the company — the seats actually in use.
+     * Bypasses the Employee company scope so it works outside an auth context
+     * (e.g. webhooks).
+     */
+    public function activeEmployeeCount(): int
+    {
+        return Employee::withoutGlobalScopes()
+            ->where('company_id', $this->company_id)
+            ->where('is_active', true)
+            ->count();
+    }
+
+    /**
+     * Whether the company has reached the employee cap of its current plan.
+     * Every plan carries an explicit cap; the null guard only covers a missing plan relation.
+     */
+    public function atEmployeeLimit(): bool
+    {
+        $max = $this->plan?->max_employees;
+
+        return $max !== null && $this->activeEmployeeCount() >= $max;
     }
 
     /**

@@ -20,6 +20,7 @@ class PlanFactory extends Factory
             'name' => ucfirst($name),
             'price_monthly' => fake()->numberBetween(2000, 11000),
             'price_yearly' => fake()->numberBetween(2000, 11000),
+            'max_employees' => fake()->randomElement([15, 40, 100]),
             'features' => null,
             'is_active' => true,
             'sort_order' => fake()->numberBetween(1, 3),

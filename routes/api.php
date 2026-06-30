@@ -21,6 +21,7 @@ use App\Http\Controllers\Employee\ClockController;
 use App\Http\Controllers\Employee\NotificationPreferenceController;
 use App\Http\Controllers\Employee\ShiftController as EmployeeShiftController;
 use App\Http\Controllers\Employee\VacationRequestController as EmployeeVacationRequestController;
+use App\Http\Controllers\Manager\BillingController;
 use App\Http\Controllers\Manager\ClockEntryController as ManagerClockEntryController;
 use App\Http\Controllers\Manager\CompanyController;
 use App\Http\Controllers\Manager\CompanyLogoController;
@@ -34,9 +35,13 @@ use App\Http\Controllers\Manager\ShiftTemplateController;
 use App\Http\Controllers\Manager\VacationPolicyController;
 use App\Http\Controllers\Manager\VacationRequestController as ManagerVacationRequestController;
 use App\Http\Controllers\VacationOverviewController;
+use App\Http\Controllers\Webhooks\VerifoneWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('calendar/{token}', [CalendarController::class, 'show']);
+
+// Inbound payment-gateway events (signature-verified inside the handler).
+Route::post('webhooks/verifone', VerifoneWebhookController::class);
 
 Route::prefix('auth')->group(function () {
     Route::post('register', RegisterController::class);
@@ -66,6 +71,16 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     // Company-wide vacation overview — visible to any company member (employee or manager).
     Route::get('vacation-overview', [VacationOverviewController::class, 'index']);
+
+    // Billing — deliberately NOT behind subscription:manager so an owner/admin can
+    // still pay to reactivate after the trial/subscription has lapsed.
+    Route::prefix('manager/billing')->middleware('company.role:owner,admin')->group(function () {
+        Route::get('/', [BillingController::class, 'index']);
+        Route::post('plan', [BillingController::class, 'changePlan']);
+        Route::post('cancel', [BillingController::class, 'cancel']);
+        Route::post('payment-method', [BillingController::class, 'setupPayment']);
+        Route::post('billing-email', [BillingController::class, 'updateBillingEmail']);
+    });
 
     Route::prefix('manager')->middleware(['company.role:owner,admin', 'subscription:manager'])->group(function () {
         Route::get('employees', [EmployeeController::class, 'index']);

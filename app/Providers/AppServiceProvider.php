@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Models\EmployeeShift;
 use App\Policies\ShiftAssignmentPolicy;
+use App\Services\Billing\BillingProvider;
+use App\Services\Billing\VerifoneBillingProvider;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -13,7 +15,9 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // The app depends only on the BillingProvider contract; swap this binding
+        // when the Verifone integration is filled in.
+        $this->app->bind(BillingProvider::class, VerifoneBillingProvider::class);
     }
 
     public function boot(): void

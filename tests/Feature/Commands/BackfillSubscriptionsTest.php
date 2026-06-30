@@ -5,7 +5,7 @@ use App\Models\Company;
 use App\Models\Subscription;
 use App\Services\SubscriptionService;
 
-it('gives legacy companies a Free-plan 30-day trial', function () {
+it('gives legacy companies a default-plan 30-day trial', function () {
     $legacy = Company::factory()->count(3)->create();
 
     $this->artisan('subscriptions:backfill')->assertSuccessful();
@@ -13,7 +13,7 @@ it('gives legacy companies a Free-plan 30-day trial', function () {
     foreach ($legacy as $company) {
         $subscription = Subscription::with('plan')->where('company_id', $company->id)->firstOrFail();
         expect($subscription->status)->toBe(SubscriptionStatus::Trialing);
-        expect($subscription->plan->key)->toBe('free');
+        expect($subscription->plan->key)->toBe(SubscriptionService::DEFAULT_PLAN_KEY);
         expect($subscription->trial_ends_at->startOfDay()->equalTo(
             now()->addDays(SubscriptionService::TRIAL_DAYS)->startOfDay()
         ))->toBeTrue();

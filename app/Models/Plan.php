@@ -15,6 +15,7 @@ class Plan extends Model
         'name',
         'price_monthly',
         'price_yearly',
+        'max_employees',
         'features',
         'is_active',
         'sort_order',
@@ -25,6 +26,7 @@ class Plan extends Model
         return [
             'features' => 'array',
             'is_active' => 'boolean',
+            'max_employees' => 'integer',
         ];
     }
 

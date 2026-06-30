@@ -16,17 +16,11 @@ class PlanSeeder extends Seeder
     {
         $plans = [
             [
-                'key' => 'free',
-                'name' => 'Frír',
-                'price_monthly' => 0,
-                'price_yearly' => 0,
-                'sort_order' => 0,
-            ],
-            [
                 'key' => 'nettur',
                 'name' => 'Nettur',
                 'price_monthly' => 2490,
                 'price_yearly' => 2075,
+                'max_employees' => 15,
                 'sort_order' => 1,
             ],
             [
@@ -34,6 +28,7 @@ class PlanSeeder extends Seeder
                 'name' => 'Þéttur',
                 'price_monthly' => 5490,
                 'price_yearly' => 4575,
+                'max_employees' => 40,
                 'sort_order' => 2,
             ],
             [
@@ -41,6 +36,7 @@ class PlanSeeder extends Seeder
                 'name' => 'Allur pakkinn',
                 'price_monthly' => 10990,
                 'price_yearly' => 9565,
+                'max_employees' => 100,
                 'sort_order' => 3,
             ],
         ];

@@ -9,7 +9,7 @@ class BackfillSubscriptions extends Command
 {
     protected $signature = 'subscriptions:backfill';
 
-    protected $description = 'Give companies that predate the subscription system a Free-plan 30-day trial.';
+    protected $description = 'Give companies that predate the subscription system a Nettur 30-day trial.';
 
     public function handle(SubscriptionService $subscriptions): int
     {

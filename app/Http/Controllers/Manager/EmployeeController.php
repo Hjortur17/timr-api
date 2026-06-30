@@ -26,6 +26,15 @@ class EmployeeController extends Controller
 
     public function store(StoreEmployeeRequest $request): JsonResponse
     {
+        $subscription = $request->user()->company?->subscription()->with('plan')->first();
+
+        if ($subscription?->atEmployeeLimit()) {
+            abort(response()->json([
+                'message' => "Pakkinn leyfir allt að {$subscription->plan->max_employees} starfsmenn. Uppfærðu pakka til að bæta við fleirum.",
+                'reason' => 'employee_limit_reached',
+            ], 422));
+        }
+
         $employee = Employee::create([
             'company_id' => $request->user()->company_id,
             ...$request->validated(),

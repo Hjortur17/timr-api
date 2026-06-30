@@ -20,11 +20,11 @@ class SubscriptionService
     public const GRACE_DAYS = 7;
 
     /** Plan assigned when the user did not pick a tier on the marketing site. */
-    public const DEFAULT_PLAN_KEY = 'free';
+    public const DEFAULT_PLAN_KEY = 'nettur';
 
     /**
      * Start a 30-day trial for a freshly created company, recording the tier the
-     * user selected on the marketing site (falling back to the Free plan).
+     * user selected on the marketing site (falling back to the default Nettur plan).
      */
     public function startTrial(Company $company, ?string $tier = null, ?string $billingPeriod = null): Subscription
     {
@@ -45,29 +45,30 @@ class SubscriptionService
     }
 
     /**
-     * Ensure the Free plan exists (used as the default / backfill plan).
+     * Ensure the default (Nettur) plan exists — used as the fallback / backfill plan.
      */
-    public function ensureFreePlan(): Plan
+    public function ensureDefaultPlan(): Plan
     {
         return Plan::firstOrCreate(
             ['key' => self::DEFAULT_PLAN_KEY],
             [
-                'name' => 'Frír',
-                'price_monthly' => 0,
-                'price_yearly' => 0,
+                'name' => 'Nettur',
+                'price_monthly' => 2490,
+                'price_yearly' => 2075,
+                'max_employees' => 15,
                 'is_active' => true,
-                'sort_order' => 0,
+                'sort_order' => 1,
             ],
         );
     }
 
     /**
-     * Backfill a Free-plan trial for every company that predates the
+     * Backfill a default-plan trial for every company that predates the
      * subscription system (i.e. has no subscription yet). Idempotent.
      */
     public function backfillMissing(): int
     {
-        $this->ensureFreePlan();
+        $this->ensureDefaultPlan();
 
         $count = 0;
 
@@ -93,6 +94,6 @@ class SubscriptionService
             }
         }
 
-        return $this->ensureFreePlan();
+        return $this->ensureDefaultPlan();
     }
 }
