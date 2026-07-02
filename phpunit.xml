@@ -31,5 +31,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- Billing is off by default in tests; tests that exercise it enable it via config()->set. -->
+        <env name="VERIFONE_ENABLED" value="false"/>
     </php>
 </phpunit>

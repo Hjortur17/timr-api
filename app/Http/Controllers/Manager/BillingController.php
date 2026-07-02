@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Manager;
 use App\Enums\BillingPeriod;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Manager\ChangePlanRequest;
-use App\Http\Requests\Manager\SetupPaymentRequest;
+use App\Http\Requests\Manager\CreateCheckoutSessionRequest;
 use App\Http\Requests\Manager\UpdateBillingEmailRequest;
 use App\Http\Resources\InvoiceResource;
 use App\Http\Resources\PaymentMethodResource;
@@ -14,10 +14,11 @@ use App\Http\Resources\SubscriptionResource;
 use App\Models\Invoice;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
+use App\Services\Billing\BillingNotConfiguredException;
 use App\Services\Billing\PaymentHandler;
+use App\Services\Billing\Verifone\VerifoneApiException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
 
 class BillingController extends Controller
@@ -70,22 +71,38 @@ class BillingController extends Controller
         return response()->json(['data' => new SubscriptionResource($subscription)]);
     }
 
-    public function setupPayment(SetupPaymentRequest $request): JsonResponse
+    /**
+     * Start Verifone's hosted checkout and return the redirect URL. The customer
+     * enters their card on Verifone's page; the card and stored-credential
+     * references arrive later via the signed completion webhook.
+     */
+    public function checkoutSession(CreateCheckoutSessionRequest $request): JsonResponse
     {
         $subscription = $this->subscription($request);
         abort_if($subscription === null, Response::HTTP_NOT_FOUND, 'No subscription.');
 
         try {
-            $paymentMethod = $this->payments->setupPaymentMethod($subscription, $request->validated());
-        } catch (RuntimeException) {
-            // Gateway not wired yet (Verifone contract pending).
+            $session = $this->payments->createCheckoutSession($subscription, [
+                'charge_now' => (bool) $request->boolean('charge_now'),
+            ]);
+        } catch (BillingNotConfiguredException) {
+            // Gateway not wired yet (Verifone disabled / credentials missing).
             return response()->json([
                 'message' => 'Billing is not yet available.',
                 'reason' => 'billing_not_configured',
             ], Response::HTTP_SERVICE_UNAVAILABLE);
+        } catch (VerifoneApiException) {
+            // Gateway reachable but rejected the request — detail is logged by the client.
+            return response()->json([
+                'message' => 'Could not start checkout. Please try again.',
+                'reason' => 'billing_error',
+            ], Response::HTTP_BAD_GATEWAY);
         }
 
-        return response()->json(['data' => new PaymentMethodResource($paymentMethod)]);
+        return response()->json(['data' => [
+            'checkout_id' => $session['id'],
+            'url' => $session['url'],
+        ]]);
     }
 
     public function updateBillingEmail(UpdateBillingEmailRequest $request): JsonResponse

@@ -40,8 +40,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('calendar/{token}', [CalendarController::class, 'show']);
 
-// Inbound payment-gateway events (signature-verified inside the handler).
-Route::post('webhooks/verifone', VerifoneWebhookController::class);
+// Inbound payment-gateway events (JWS signature-verified inside the handler).
+Route::post('webhooks/verifone', VerifoneWebhookController::class)->middleware('throttle:120,1');
 
 Route::prefix('auth')->group(function () {
     Route::post('register', RegisterController::class);
@@ -78,7 +78,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [BillingController::class, 'index']);
         Route::post('plan', [BillingController::class, 'changePlan']);
         Route::post('cancel', [BillingController::class, 'cancel']);
-        Route::post('payment-method', [BillingController::class, 'setupPayment']);
+        Route::post('checkout-session', [BillingController::class, 'checkoutSession']);
         Route::post('billing-email', [BillingController::class, 'updateBillingEmail']);
     });
 

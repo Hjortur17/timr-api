@@ -14,18 +14,36 @@ use App\Models\Subscription;
 interface BillingProvider
 {
     /**
-     * Begin a paid subscription for the company at the gateway, returning the
-     * external reference to persist on the local Subscription.
+     * Create a hosted checkout session so the customer can enter their card on
+     * Verifone's page and enrol a recurring stored credential. Returns the session
+     * id and the redirect URL to send the customer to.
+     *
+     * @param  array{charge_now?: bool}  $opts
+     * @return array{id: string, url: string, status: string}
      */
-    public function startSubscription(Subscription $subscription): string;
+    public function createCheckoutSession(Subscription $subscription, array $opts = []): array;
 
     /**
-     * Cancel the subscription at the gateway.
+     * Run a merchant-initiated recurring charge against the stored credential.
+     */
+    public function chargeRecurring(Subscription $subscription, int $amount, string $idempotencyKey): ChargeResult;
+
+    /**
+     * Cancel the recurring credential at the gateway (best-effort; local
+     * period-end cancellation is owned by PaymentHandler).
      */
     public function cancel(Subscription $subscription): void;
 
     /**
-     * Handle an inbound webhook payload from the gateway.
+     * Verify the authenticity of an inbound webhook (detached JWS signature) over
+     * the raw request body.
+     *
+     * @param  array<string, list<string|null>>  $headers
+     */
+    public function verifyWebhook(string $rawBody, array $headers): bool;
+
+    /**
+     * Handle a verified inbound webhook payload from the gateway.
      *
      * @param  array<string, mixed>  $payload
      */

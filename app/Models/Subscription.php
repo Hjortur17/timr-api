@@ -21,8 +21,31 @@ class Subscription extends Model
         'current_period_ends_at',
         'grace_ends_at',
         'verifone_reference',
+        'verifone_checkout_id',
+        'verifone_reuse_token',
+        'verifone_token_scope',
+        'verifone_stored_credential_ref',
+        'verifone_scheme_reference',
+        'verifone_payment_contract_id',
+        'payment_sequence',
+        'last_charge_at',
         'billing_email',
         'canceled_at',
+    ];
+
+    /**
+     * Opaque Verifone credential/reference columns must never leak to the client.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'verifone_reference',
+        'verifone_checkout_id',
+        'verifone_reuse_token',
+        'verifone_token_scope',
+        'verifone_stored_credential_ref',
+        'verifone_scheme_reference',
+        'verifone_payment_contract_id',
     ];
 
     protected function casts(): array
@@ -33,7 +56,11 @@ class Subscription extends Model
             'trial_ends_at' => 'datetime',
             'current_period_ends_at' => 'datetime',
             'grace_ends_at' => 'datetime',
+            'last_charge_at' => 'datetime',
+            'payment_sequence' => 'integer',
             'canceled_at' => 'datetime',
+            // Encrypted at rest — this is the handle that authorizes recurring charges.
+            'verifone_reuse_token' => 'encrypted',
         ];
     }
 
@@ -77,6 +104,25 @@ class Subscription extends Model
     public function isPaid(): bool
     {
         return $this->status === SubscriptionStatus::Active;
+    }
+
+    /**
+     * Whether we hold a Verifone reuse token we can charge against for
+     * merchant-initiated recurring payments. The stored-credential reference is
+     * established on the first charge; the token is the handle we always need.
+     */
+    public function canChargeRecurring(): bool
+    {
+        return $this->verifone_reuse_token !== null;
+    }
+
+    /**
+     * Cancellation was requested but access continues until the current period
+     * ends (cancel-at-period-end).
+     */
+    public function pendingCancellation(): bool
+    {
+        return $this->canceled_at !== null && $this->status === SubscriptionStatus::Active;
     }
 
     /**

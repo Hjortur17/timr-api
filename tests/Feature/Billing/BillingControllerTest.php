@@ -83,11 +83,11 @@ it('cancels the subscription', function () {
     expect($sub->canceled_at)->not->toBeNull();
 });
 
-it('returns a graceful not-configured response when setting up payment before Verifone is wired', function () {
+it('returns a graceful not-configured response when starting checkout before Verifone is wired', function () {
     billingSub($this->company->id, $this->plan->id)->trialing()->create();
 
     $this->actingAs($this->manager)
-        ->postJson('/api/manager/billing/payment-method', [])
+        ->postJson('/api/manager/billing/checkout-session', [])
         ->assertStatus(503)
         ->assertJsonPath('reason', 'billing_not_configured');
 });
